@@ -1,0 +1,47 @@
+{
+  "id": "load-balancer-migration",
+  "name": "Load Balancer Migration (CLB to ALB/NLB)",
+  "category": "networking",
+  "difficulty": "high",
+  "description": "Migrate from Classic Load Balancer to Application or Network Load Balancer for improved features and performance",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentLB",
+      "label": "Current Load Balancer Type",
+      "type": "select",
+      "options": ["Classic Load Balancer", "Application Load Balancer", "Network Load Balancer"],
+      "default": "Classic Load Balancer",
+      "required": true
+    },
+    {
+      "name": "targetLB",
+      "label": "Target Load Balancer Type",
+      "type": "select",
+      "options": ["Application Load Balancer", "Network Load Balancer"],
+      "default": "Application Load Balancer",
+      "required": true
+    },
+    {
+      "name": "targetCount",
+      "label": "Number of Backend Targets",
+      "type": "number",
+      "default": "10",
+      "required": true
+    },
+    {
+      "name": "requestsPerSecond",
+      "label": "Requests per Second",
+      "type": "number",
+      "default": "10000",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Migrating from {{currentLB}} to {{targetLB}} for {{targetCount}} backend targets handling {{requestsPerSecond}} requests/second. Migration includes DNS cutover, SSL certificate migration, health check configuration, and validation of routing rules and sticky sessions.",
+    "changeType": "networking",
+    "currentState": "{{currentLB}} distributing traffic to {{targetCount}} EC2 instances. Handling {{requestsPerSecond}} req/sec. SSL termination at load balancer. Health checks every 30 seconds. Session stickiness enabled. DNS TTL: 60 seconds.",
+    "proposedState": "{{targetLB}} with target groups for {{targetCount}} instances. Advanced routing rules, path-based routing, and host-based routing configured. SSL certificates migrated to ACM. Enhanced health checks with custom paths. Connection draining: 300 seconds.",
+    "trafficPatterns": "Production traffic with global users. Peak load during business hours (9 AM - 6 PM EST). Mix of HTTP/HTTPS traffic. Long-lived connections for some API endpoints. SSL/TLS required. Average response time: 200ms."
+  }
+}

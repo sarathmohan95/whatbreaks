@@ -72,26 +72,36 @@ WhatBreaks performs **counterfactual reasoning**: it assumes your infrastructure
 
 ```
 whatbreaks/
-├── src/
-│   ├── app/                    # Next.js app router
-│   │   ├── page.tsx           # Landing page
-│   │   ├── analyze/           # Analysis flow
-│   │   ├── dashboard/         # Results dashboard
-│   │   └── api/               # API routes
-│   ├── components/            # React components
-│   │   ├── ui/               # shadcn/ui components
-│   │   ├── landing/          # Landing page sections
-│   │   ├── analysis/         # Analysis form & results
-│   │   └── dashboard/        # Dashboard widgets
-│   ├── lib/                   # Utilities
-│   │   ├── ai/               # AI integration
-│   │   ├── aws/              # AWS SDK clients
-│   │   ├── pdf/              # PDF generation
-│   │   └── utils.ts          # Helper functions
-│   └── types/                 # TypeScript types
-├── public/                    # Static assets
-├── infrastructure/            # AWS CDK/CloudFormation
-└── docs/                      # Documentation
+├── frontend/                  # Next.js web application
+│   ├── src/
+│   │   ├── app/              # Next.js app router
+│   │   │   ├── page.tsx     # Landing page
+│   │   │   ├── analyze/     # Analysis flow
+│   │   │   ├── dashboard/   # Results dashboard
+│   │   │   └── api/         # API routes (dev only)
+│   │   ├── components/       # React components
+│   │   │   └── ui/          # shadcn/ui components
+│   │   ├── lib/             # Utilities
+│   │   │   ├── ai/          # AI integration
+│   │   │   ├── pdf/         # PDF generation
+│   │   │   └── utils.ts     # Helper functions
+│   │   └── types/           # TypeScript types
+│   └── package.json
+├── backend/                   # Lambda functions
+│   ├── premortem-lambda/     # Main pre-mortem generator
+│   │   ├── index.js         # Lambda handler
+│   │   └── package.json     # Dependencies
+│   └── README.md
+├── infrastructure/            # Terraform configuration
+│   ├── main.tf              # Main infrastructure
+│   ├── variables.tf         # Input variables
+│   ├── outputs.tf           # Output values
+│   ├── deploy.sh            # Deployment script (Linux/macOS)
+│   ├── deploy.ps1           # Deployment script (Windows)
+│   └── README.md
+├── docs/                      # Documentation
+├── examples/                  # Sample inputs and test cases
+└── .kiro/                    # Kiro specs and configuration
 ```
 
 ## Features
@@ -118,27 +128,53 @@ whatbreaks/
 
 ## 🎯 Quick Start
 
+### Local Development (Frontend Only)
+
 **Get running in 5 minutes:**
 
 ```bash
-# 1. Install dependencies
+# 1. Navigate to frontend
+cd frontend
+
+# 2. Install dependencies
 npm install
 
-# 2. Create environment file
+# 3. Create environment file
 cp .env.example .env.local
 
-# 3. Add your OpenAI API key to .env.local
+# 4. Add your OpenAI API key to .env.local
+# OPENAI_API_KEY=sk-your-key-here
 
-# 4. Start development server
+# 5. Start development server
 npm run dev
 
-# 5. Open http://localhost:3000
+# 6. Open http://localhost:3000
+```
+
+### Full Stack Deployment
+
+**Deploy backend infrastructure to AWS:**
+
+```bash
+# 1. Deploy infrastructure
+cd infrastructure
+./deploy.sh  # Linux/macOS
+# or
+.\deploy.ps1  # Windows
+
+# 2. Update frontend with API endpoint
+cd ../frontend
+# Edit .env.local with the API URL from Terraform output
+
+# 3. Deploy frontend to Vercel
+vercel deploy
 ```
 
 **Detailed guides:**
 - 🚀 [START_HERE.md](START_HERE.md) - Your starting point
-- ⚡ [QUICK_START.md](QUICK_START.md) - 5-minute setup
-- 📦 [INSTALLATION.md](INSTALLATION.md) - Complete installation guide
+- 📦 [frontend/README.md](frontend/README.md) - Frontend setup
+- 🔧 [backend/README.md](backend/README.md) - Backend development
+- 🏗️ [infrastructure/README.md](infrastructure/README.md) - Infrastructure deployment
 - 💻 [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md) - Development guide
 
 ### Environment Variables

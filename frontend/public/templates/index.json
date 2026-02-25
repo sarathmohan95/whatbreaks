@@ -1,0 +1,111 @@
+{
+  "templates": [
+    {
+      "id": "redis-cluster-migration",
+      "category": "database",
+      "path": "/templates/database/redis-cluster-migration.json"
+    },
+    {
+      "id": "postgresql-upgrade",
+      "category": "database",
+      "path": "/templates/database/postgresql-upgrade.json"
+    },
+    {
+      "id": "rds-multi-az",
+      "category": "database",
+      "path": "/templates/database/rds-multi-az.json"
+    },
+    {
+      "id": "dynamodb-billing-mode",
+      "category": "database",
+      "path": "/templates/database/dynamodb-billing-mode.json"
+    },
+    {
+      "id": "mongodb-replica-expansion",
+      "category": "database",
+      "path": "/templates/database/mongodb-replica-expansion.json"
+    },
+    {
+      "id": "k8s-cluster-upgrade",
+      "category": "kubernetes",
+      "path": "/templates/kubernetes/cluster-upgrade.json"
+    },
+    {
+      "id": "k8s-node-scaling",
+      "category": "kubernetes",
+      "path": "/templates/kubernetes/node-group-scaling.json"
+    },
+    {
+      "id": "k8s-ingress-migration",
+      "category": "kubernetes",
+      "path": "/templates/kubernetes/ingress-migration.json"
+    },
+    {
+      "id": "vpc-peering-setup",
+      "category": "networking",
+      "path": "/templates/networking/vpc-peering.json"
+    },
+    {
+      "id": "load-balancer-migration",
+      "category": "networking",
+      "path": "/templates/networking/load-balancer-migration.json"
+    },
+    {
+      "id": "dns-provider-change",
+      "category": "networking",
+      "path": "/templates/networking/dns-provider-change.json"
+    },
+    {
+      "id": "s3-bucket-replication",
+      "category": "storage",
+      "path": "/templates/storage/s3-replication.json"
+    },
+    {
+      "id": "ebs-volume-type-change",
+      "category": "storage",
+      "path": "/templates/storage/ebs-volume-type.json"
+    },
+    {
+      "id": "ec2-instance-type-change",
+      "category": "compute",
+      "path": "/templates/compute/ec2-instance-type.json"
+    },
+    {
+      "id": "lambda-runtime-upgrade",
+      "category": "compute",
+      "path": "/templates/compute/lambda-runtime-upgrade.json"
+    }
+  ],
+  "categories": [
+    {
+      "id": "database",
+      "name": "Database",
+      "description": "Database migrations, upgrades, and scaling operations",
+      "icon": "database"
+    },
+    {
+      "id": "kubernetes",
+      "name": "Kubernetes",
+      "description": "Kubernetes cluster operations and workload management",
+      "icon": "container"
+    },
+    {
+      "id": "networking",
+      "name": "Networking",
+      "description": "Network infrastructure and connectivity changes",
+      "icon": "network"
+    },
+    {
+      "id": "storage",
+      "name": "Storage",
+      "description": "Storage configuration and data replication",
+      "icon": "hard-drive"
+    },
+    {
+      "id": "compute",
+      "name": "Compute",
+      "description": "Compute resource changes and optimizations",
+      "icon": "cpu"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "id": "lambda-runtime-upgrade",
+  "name": "Lambda Runtime Version Upgrade",
+  "category": "compute",
+  "difficulty": "medium",
+  "description": "Upgrade Lambda function runtime to a newer version before deprecation deadline",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentRuntime",
+      "label": "Current Runtime",
+      "type": "text",
+      "default": "python3.8",
+      "required": true
+    },
+    {
+      "name": "targetRuntime",
+      "label": "Target Runtime",
+      "type": "text",
+      "default": "python3.11",
+      "required": true
+    },
+    {
+      "name": "functionCount",
+      "label": "Number of Functions",
+      "type": "number",
+      "default": "50",
+      "required": true
+    },
+    {
+      "name": "invocationsPerDay",
+      "label": "Total Invocations per Day",
+      "type": "number",
+      "default": "1000000",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Upgrading {{functionCount}} Lambda functions from {{currentRuntime}} to {{targetRuntime}} runtime. Total invocations: {{invocationsPerDay}}/day. Upgrade includes code compatibility testing, dependency updates, performance validation, and gradual rollout using aliases and weighted routing.",
+    "changeType": "compute",
+    "currentState": "{{functionCount}} Lambda functions on {{currentRuntime}} runtime. Total {{invocationsPerDay}} invocations/day. Functions use various AWS SDK versions, third-party libraries, and custom layers. Average execution time: 500ms. Memory: 512MB-2GB range.",
+    "proposedState": "Functions updated to {{targetRuntime}} with tested code changes. Dependencies updated for compatibility. Lambda layers rebuilt for new runtime. Deployment using aliases with 10% canary, then 50%, then 100%. CloudWatch alarms for errors, duration, and throttles.",
+    "trafficPatterns": "Event-driven architecture with API Gateway triggers, S3 events, DynamoDB streams, and scheduled events. Peak invocations during business hours. Critical functions for order processing, data transformation, and notifications. Cold start optimization required."
+  }
+}

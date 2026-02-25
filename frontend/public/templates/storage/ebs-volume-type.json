@@ -1,0 +1,47 @@
+{
+  "id": "ebs-volume-type-change",
+  "name": "EBS Volume Type Migration",
+  "category": "storage",
+  "difficulty": "low",
+  "description": "Migrate EBS volumes from one type to another (e.g., gp2 to gp3) for better performance or cost optimization",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentType",
+      "label": "Current Volume Type",
+      "type": "select",
+      "options": ["gp2", "gp3", "io1", "io2", "st1", "sc1"],
+      "default": "gp2",
+      "required": true
+    },
+    {
+      "name": "targetType",
+      "label": "Target Volume Type",
+      "type": "select",
+      "options": ["gp3", "io2", "st1", "sc1"],
+      "default": "gp3",
+      "required": true
+    },
+    {
+      "name": "volumeSize",
+      "label": "Volume Size (GB)",
+      "type": "number",
+      "default": "500",
+      "required": true
+    },
+    {
+      "name": "instanceCount",
+      "label": "Number of Instances",
+      "type": "number",
+      "default": "20",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Migrating EBS volumes from {{currentType}} to {{targetType}} for {{instanceCount}} EC2 instances. Each volume is {{volumeSize}} GB. Migration will be performed using EBS Elastic Volumes feature for online modification without downtime. Monitoring IOPS and throughput during and after migration.",
+    "changeType": "storage",
+    "currentState": "{{instanceCount}} EC2 instances with {{currentType}} EBS volumes ({{volumeSize}} GB each). Current IOPS: baseline 3 IOPS/GB. No performance issues observed. Volumes used for application data, databases, and logs.",
+    "proposedState": "Volumes modified to {{targetType}} using Elastic Volumes API. For gp3: 3000 IOPS baseline and 125 MB/s throughput. Modification performed during maintenance window. CloudWatch monitoring for volume performance metrics and application impact.",
+    "trafficPatterns": "Production workloads with variable I/O patterns. Database workloads with random reads/writes. Peak I/O during business hours. Average utilization: 60% of provisioned IOPS. Latency-sensitive applications requiring consistent performance."
+  }
+}

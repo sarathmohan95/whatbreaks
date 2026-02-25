@@ -1,0 +1,45 @@
+{
+  "id": "k8s-node-scaling",
+  "name": "Kubernetes Node Group Scaling",
+  "category": "kubernetes",
+  "difficulty": "medium",
+  "description": "Scale Kubernetes node group to handle increased workload demands",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentNodes",
+      "label": "Current Node Count",
+      "type": "number",
+      "default": "10",
+      "required": true
+    },
+    {
+      "name": "targetNodes",
+      "label": "Target Node Count",
+      "type": "number",
+      "default": "20",
+      "required": true
+    },
+    {
+      "name": "instanceType",
+      "label": "Node Instance Type",
+      "type": "text",
+      "default": "m5.2xlarge",
+      "required": true
+    },
+    {
+      "name": "avgCPU",
+      "label": "Current Average CPU Usage (%)",
+      "type": "number",
+      "default": "75",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Scaling Kubernetes node group from {{currentNodes}} to {{targetNodes}} nodes ({{instanceType}}). Current average CPU utilization is {{avgCPU}}%. Scaling will add capacity for growing workload demands while maintaining pod distribution and availability.",
+    "changeType": "infrastructure",
+    "currentState": "Node group with {{currentNodes}} {{instanceType}} instances across 3 AZs. Current CPU utilization: {{avgCPU}}%. Cluster autoscaler enabled with min {{currentNodes}}, max {{currentNodes}}. Pod scheduling pressure observed during peak hours.",
+    "proposedState": "Expanded node group with {{targetNodes}} nodes. Update autoscaler limits to min {{targetNodes}}, max {{targetNodes * 1.5}}. Gradual scale-up to allow pod rescheduling. Monitor for resource utilization and pod distribution across new nodes.",
+    "trafficPatterns": "Variable workload with daily peaks. CPU-intensive applications including data processing, ML inference, and API services. Memory usage stable at 60%. Network traffic increases during peak hours with burst capacity needed."
+  }
+}

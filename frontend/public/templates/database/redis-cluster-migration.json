@@ -1,0 +1,45 @@
+{
+  "id": "redis-cluster-migration",
+  "name": "Redis Single Node to Cluster Migration",
+  "category": "database",
+  "difficulty": "high",
+  "description": "Migrate from a single Redis instance to a Redis Cluster for improved scalability and high availability",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentNodes",
+      "label": "Current Number of Nodes",
+      "type": "number",
+      "default": "1",
+      "required": true
+    },
+    {
+      "name": "targetNodes",
+      "label": "Target Number of Cluster Nodes",
+      "type": "number",
+      "default": "6",
+      "required": true
+    },
+    {
+      "name": "dataSize",
+      "label": "Current Data Size (GB)",
+      "type": "number",
+      "default": "50",
+      "required": true
+    },
+    {
+      "name": "trafficQPS",
+      "label": "Current Traffic (QPS)",
+      "type": "number",
+      "default": "10000",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "We are migrating our Redis infrastructure from a single {{currentNodes}}-node setup to a {{targetNodes}}-node Redis Cluster. Current data size is {{dataSize}}GB with {{trafficQPS}} queries per second. The migration will involve resharding data across cluster nodes and updating application connection logic to use cluster-aware clients.",
+    "changeType": "database",
+    "currentState": "Single Redis instance ({{currentNodes}} node) handling {{trafficQPS}} QPS with {{dataSize}}GB of data. Applications use standard Redis clients with direct connection strings.",
+    "proposedState": "Redis Cluster with {{targetNodes}} nodes (3 masters, 3 replicas) with automatic sharding. Applications updated to use cluster-aware Redis clients with cluster endpoint discovery.",
+    "trafficPatterns": "Peak traffic: {{trafficQPS}} QPS. Mix of read-heavy (70%) and write operations (30%). Critical operations include session management, caching, and real-time counters."
+  }
+}

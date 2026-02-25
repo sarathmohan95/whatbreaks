@@ -1,0 +1,46 @@
+{
+  "id": "mongodb-replica-expansion",
+  "name": "MongoDB Replica Set Expansion",
+  "category": "database",
+  "difficulty": "medium",
+  "description": "Expand MongoDB replica set by adding additional secondary nodes for improved read scalability",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentReplicas",
+      "label": "Current Number of Replicas",
+      "type": "number",
+      "default": "3",
+      "required": true
+    },
+    {
+      "name": "targetReplicas",
+      "label": "Target Number of Replicas",
+      "type": "number",
+      "default": "5",
+      "required": true
+    },
+    {
+      "name": "dataSize",
+      "label": "Data Size per Node (GB)",
+      "type": "number",
+      "default": "200",
+      "required": true
+    },
+    {
+      "name": "readPreference",
+      "label": "Read Preference",
+      "type": "select",
+      "options": ["primary", "primaryPreferred", "secondary", "secondaryPreferred", "nearest"],
+      "default": "secondaryPreferred",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Expanding MongoDB replica set from {{currentReplicas}} to {{targetReplicas}} nodes. Each node currently holds {{dataSize}}GB of data. Applications use '{{readPreference}}' read preference. New secondaries will improve read distribution and provide additional redundancy.",
+    "changeType": "database",
+    "currentState": "MongoDB replica set with {{currentReplicas}} nodes (1 primary, {{currentReplicas - 1}} secondaries). {{dataSize}}GB data per node. Applications configured with '{{readPreference}}' read preference. Replication lag typically under 1 second.",
+    "proposedState": "Expanded replica set with {{targetReplicas}} nodes (1 primary, {{targetReplicas - 1}} secondaries). New nodes will sync {{dataSize}}GB via initial sync. Same read preference maintained. Load balancing across {{targetReplicas - 1}} secondaries for reads.",
+    "trafficPatterns": "High read volume with 90% reads, 10% writes. Peak traffic during business hours. Read operations include complex aggregations and full-text search. Write operations are transactional updates and inserts."
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "description": "We are migrating our main PostgreSQL database from a single m5.large instance to a multi-AZ RDS cluster with read replicas. The migration involves changing connection strings across 15 microservices, updating the application configuration, and switching DNS records during a maintenance window.",
+  "changeType": "database",
+  "currentState": "Single m5.large RDS instance in us-east-1a",
+  "proposedState": "Multi-AZ RDS cluster with 2 read replicas",
+  "trafficPatterns": "Peak: 10,000 requests/minute during business hours"
+}

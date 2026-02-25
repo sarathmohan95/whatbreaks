@@ -1,0 +1,45 @@
+{
+  "id": "postgresql-upgrade",
+  "name": "PostgreSQL Version Upgrade",
+  "category": "database",
+  "difficulty": "medium",
+  "description": "Upgrade PostgreSQL database to a newer major version with minimal downtime",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentVersion",
+      "label": "Current PostgreSQL Version",
+      "type": "text",
+      "default": "12.x",
+      "required": true
+    },
+    {
+      "name": "targetVersion",
+      "label": "Target PostgreSQL Version",
+      "type": "text",
+      "default": "15.x",
+      "required": true
+    },
+    {
+      "name": "databaseSize",
+      "label": "Database Size (GB)",
+      "type": "number",
+      "default": "500",
+      "required": true
+    },
+    {
+      "name": "downtime",
+      "label": "Acceptable Downtime (minutes)",
+      "type": "number",
+      "default": "30",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Upgrading PostgreSQL from version {{currentVersion}} to {{targetVersion}}. Database size is {{databaseSize}}GB. Target downtime window is {{downtime}} minutes. Upgrade will use pg_upgrade for faster migration and include testing of deprecated features and query performance.",
+    "changeType": "database",
+    "currentState": "PostgreSQL {{currentVersion}} running on RDS with {{databaseSize}}GB of data. Current extensions: pg_stat_statements, pgcrypto, uuid-ossp. Applications use connection pooling via PgBouncer.",
+    "proposedState": "PostgreSQL {{targetVersion}} with same extensions verified compatible. Using pg_upgrade for in-place upgrade. Planned downtime: {{downtime}} minutes during maintenance window.",
+    "trafficPatterns": "24/7 operation with peak hours 9 AM - 5 PM EST. Average 5000 transactions/minute. Read-heavy workload (80% reads, 20% writes). Critical for customer-facing applications."
+  }
+}

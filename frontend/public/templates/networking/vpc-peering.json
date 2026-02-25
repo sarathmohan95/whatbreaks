@@ -1,0 +1,46 @@
+{
+  "id": "vpc-peering-setup",
+  "name": "VPC Peering Connection Setup",
+  "category": "networking",
+  "difficulty": "medium",
+  "description": "Establish VPC peering connection between two VPCs for private network communication",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "sourceVPC",
+      "label": "Source VPC CIDR",
+      "type": "text",
+      "default": "10.0.0.0/16",
+      "required": true
+    },
+    {
+      "name": "targetVPC",
+      "label": "Target VPC CIDR",
+      "type": "text",
+      "default": "10.1.0.0/16",
+      "required": true
+    },
+    {
+      "name": "trafficType",
+      "label": "Primary Traffic Type",
+      "type": "select",
+      "options": ["Database queries", "API calls", "File transfers", "Message queues"],
+      "default": "Database queries",
+      "required": true
+    },
+    {
+      "name": "bandwidth",
+      "label": "Expected Bandwidth (Gbps)",
+      "type": "number",
+      "default": "5",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Setting up VPC peering between {{sourceVPC}} and {{targetVPC}} to enable private communication for {{trafficType}}. Expected bandwidth: {{bandwidth}} Gbps. Will update route tables, security groups, and NACLs to allow traffic flow while maintaining security boundaries.",
+    "changeType": "networking",
+    "currentState": "Two isolated VPCs: {{sourceVPC}} (production apps) and {{targetVPC}} (shared services). Currently communicating via public internet with VPN. Security groups restrict traffic to specific IPs. NAT gateways for outbound traffic.",
+    "proposedState": "VPC peering connection established with route table updates in both VPCs. Security groups updated to allow traffic from peer VPC CIDR blocks. NACLs configured for {{trafficType}}. DNS resolution enabled across peering connection.",
+    "trafficPatterns": "Primary use case: {{trafficType}} from {{sourceVPC}} to {{targetVPC}}. Expected {{bandwidth}} Gbps peak bandwidth. Latency-sensitive traffic requiring sub-10ms response times. 24/7 operation with higher load during business hours."
+  }
+}

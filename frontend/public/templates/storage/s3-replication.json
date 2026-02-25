@@ -1,0 +1,45 @@
+{
+  "id": "s3-bucket-replication",
+  "name": "S3 Cross-Region Replication Setup",
+  "category": "storage",
+  "difficulty": "medium",
+  "description": "Configure S3 cross-region replication for disaster recovery and data locality",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "sourceBucket",
+      "label": "Source Bucket Name",
+      "type": "text",
+      "default": "prod-data-us-east-1",
+      "required": true
+    },
+    {
+      "name": "sourceRegion",
+      "label": "Source Region",
+      "type": "text",
+      "default": "us-east-1",
+      "required": true
+    },
+    {
+      "name": "targetRegion",
+      "label": "Target Region",
+      "type": "text",
+      "default": "us-west-2",
+      "required": true
+    },
+    {
+      "name": "dataSize",
+      "label": "Total Data Size (TB)",
+      "type": "number",
+      "default": "10",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Setting up S3 cross-region replication from {{sourceBucket}} in {{sourceRegion}} to {{targetRegion}}. Total data size: {{dataSize}} TB. Replication will include existing objects (batch replication) and new objects. Configuring replication rules, IAM roles, and monitoring for replication lag.",
+    "changeType": "storage",
+    "currentState": "S3 bucket '{{sourceBucket}}' in {{sourceRegion}} with {{dataSize}} TB of data. Versioning not enabled. No replication configured. Objects include application data, user uploads, and backups. Lifecycle policies for archival to Glacier after 90 days.",
+    "proposedState": "Versioning enabled on source bucket. Replication rule created to replicate all objects to {{targetRegion}}. IAM replication role configured. S3 Batch Replication job for existing {{dataSize}} TB. Replication metrics and CloudWatch alarms for monitoring lag.",
+    "trafficPatterns": "Continuous uploads throughout the day. Average 1000 new objects/hour. Object sizes range from 1 KB to 5 GB. Read-heavy workload with CloudFront CDN. Critical for application functionality and compliance requirements."
+  }
+}

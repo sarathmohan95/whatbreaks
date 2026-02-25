@@ -1,0 +1,45 @@
+{
+  "id": "dynamodb-billing-mode",
+  "name": "DynamoDB On-Demand to Provisioned Capacity",
+  "category": "database",
+  "difficulty": "low",
+  "description": "Switch DynamoDB table from on-demand to provisioned capacity mode for cost optimization",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "tableName",
+      "label": "Table Name",
+      "type": "text",
+      "default": "users-table",
+      "required": true
+    },
+    {
+      "name": "avgReadCapacity",
+      "label": "Average Read Capacity Units",
+      "type": "number",
+      "default": "1000",
+      "required": true
+    },
+    {
+      "name": "avgWriteCapacity",
+      "label": "Average Write Capacity Units",
+      "type": "number",
+      "default": "500",
+      "required": true
+    },
+    {
+      "name": "peakMultiplier",
+      "label": "Peak Traffic Multiplier",
+      "type": "number",
+      "default": "3",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Converting DynamoDB table '{{tableName}}' from on-demand billing to provisioned capacity mode. Current average usage: {{avgReadCapacity}} RCU and {{avgWriteCapacity}} WCU. Peak traffic is {{peakMultiplier}}x average. Will configure auto-scaling to handle traffic spikes while optimizing costs.",
+    "changeType": "database",
+    "currentState": "DynamoDB table '{{tableName}}' using on-demand billing mode. Handles variable traffic with automatic scaling. Average throughput: {{avgReadCapacity}} reads/sec and {{avgWriteCapacity}} writes/sec. No throttling observed.",
+    "proposedState": "Provisioned capacity mode with base capacity of {{avgReadCapacity}} RCU and {{avgWriteCapacity}} WCU. Auto-scaling enabled with target utilization 70%, min capacity 50% of base, max capacity {{peakMultiplier}}x base. CloudWatch alarms for throttling.",
+    "trafficPatterns": "Predictable daily pattern with peak hours 10 AM - 4 PM. Weekend traffic is 40% of weekday. Occasional spikes during marketing campaigns ({{peakMultiplier}}x normal). Read-heavy workload with 80/20 read-write ratio."
+  }
+}

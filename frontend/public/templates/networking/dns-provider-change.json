@@ -1,0 +1,45 @@
+{
+  "id": "dns-provider-change",
+  "name": "DNS Provider Migration",
+  "category": "networking",
+  "difficulty": "medium",
+  "description": "Migrate DNS hosting from one provider to another (e.g., Route53, Cloudflare, etc.)",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentProvider",
+      "label": "Current DNS Provider",
+      "type": "text",
+      "default": "GoDaddy",
+      "required": true
+    },
+    {
+      "name": "targetProvider",
+      "label": "Target DNS Provider",
+      "type": "text",
+      "default": "AWS Route53",
+      "required": true
+    },
+    {
+      "name": "domainCount",
+      "label": "Number of Domains",
+      "type": "number",
+      "default": "5",
+      "required": true
+    },
+    {
+      "name": "recordCount",
+      "label": "Total DNS Records",
+      "type": "number",
+      "default": "150",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Migrating DNS hosting from {{currentProvider}} to {{targetProvider}} for {{domainCount}} domains with {{recordCount}} total DNS records. Migration includes zone file export/import, nameserver updates at registrar, TTL reduction, and validation of all record types (A, AAAA, CNAME, MX, TXT, etc.).",
+    "changeType": "networking",
+    "currentState": "DNS hosted on {{currentProvider}} for {{domainCount}} domains. {{recordCount}} DNS records including A, CNAME, MX, TXT records. Current TTL values: 3600 seconds. DNSSEC not enabled. No health checks or failover routing.",
+    "proposedState": "DNS migrated to {{targetProvider}} with all {{recordCount}} records. TTL reduced to 300 seconds before migration. Nameservers updated at domain registrar. DNSSEC enabled. Health checks configured for critical endpoints. Geolocation routing for global traffic.",
+    "trafficPatterns": "Production domains serving global traffic. Critical for website, email (MX records), and API endpoints. DNS queries: ~100,000/day. Zero downtime requirement. Email delivery must not be interrupted. SSL certificate validation via DNS (TXT records)."
+  }
+}

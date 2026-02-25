@@ -1,48 +1,34 @@
 {
-  "name": "whatbreaks",
+  "name": "whatbreaks-monorepo",
   "version": "1.0.0",
-  "description": "AI-powered AWS architecture reliability review assistant",
+  "description": "AI-powered pre-mortem engine for cloud infrastructure",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend/premortem-lambda"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "start": "npm run start --workspace=frontend",
+    "lint": "npm run lint --workspace=frontend",
+    "install:all": "npm install && npm install --workspace=frontend && npm install --workspace=backend/premortem-lambda",
+    "clean": "rm -rf frontend/node_modules frontend/.next backend/premortem-lambda/node_modules backend/*.zip",
+    "deploy:infra": "cd infrastructure && ./deploy.sh",
+    "deploy:infra:windows": "cd infrastructure && .\\deploy.ps1"
   },
-  "dependencies": {
-    "next": "^14.2.0",
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0",
-    "@radix-ui/react-dialog": "^1.0.5",
-    "@radix-ui/react-dropdown-menu": "^2.0.6",
-    "@radix-ui/react-select": "^2.0.0",
-    "@radix-ui/react-slot": "^1.0.2",
-    "@radix-ui/react-tabs": "^1.0.4",
-    "@radix-ui/react-progress": "^1.0.3",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.0",
-    "lucide-react": "^0.344.0",
-    "recharts": "^2.12.0",
-    "jspdf": "^2.5.1",
-    "openai": "^4.28.0",
-    "@aws-sdk/client-bedrock-runtime": "^3.525.0",
-    "@aws-sdk/client-dynamodb": "^3.525.0",
-    "@aws-sdk/client-s3": "^3.525.0",
-    "@aws-sdk/lib-dynamodb": "^3.525.0",
-    "zod": "^3.22.4"
-  },
-  "devDependencies": {
-    "@types/node": "^20.11.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "typescript": "^5.3.0",
-    "tailwindcss": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7",
-    "postcss": "^8.4.0",
-    "autoprefixer": "^10.4.0",
-    "eslint": "^8.56.0",
-    "eslint-config-next": "^14.2.0"
+  "keywords": [
+    "aws",
+    "ai",
+    "premortem",
+    "reliability",
+    "infrastructure",
+    "bedrock"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/whatbreaks"
   }
 }

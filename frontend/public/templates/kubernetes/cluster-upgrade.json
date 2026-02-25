@@ -1,0 +1,45 @@
+{
+  "id": "k8s-cluster-upgrade",
+  "name": "Kubernetes Cluster Version Upgrade",
+  "category": "kubernetes",
+  "difficulty": "high",
+  "description": "Upgrade Kubernetes cluster to a newer version with rolling updates to minimize disruption",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentVersion",
+      "label": "Current Kubernetes Version",
+      "type": "text",
+      "default": "1.24",
+      "required": true
+    },
+    {
+      "name": "targetVersion",
+      "label": "Target Kubernetes Version",
+      "type": "text",
+      "default": "1.27",
+      "required": true
+    },
+    {
+      "name": "nodeCount",
+      "label": "Number of Worker Nodes",
+      "type": "number",
+      "default": "20",
+      "required": true
+    },
+    {
+      "name": "podCount",
+      "label": "Total Pod Count",
+      "type": "number",
+      "default": "500",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Upgrading EKS/AKS cluster from Kubernetes {{currentVersion}} to {{targetVersion}}. Cluster has {{nodeCount}} worker nodes running {{podCount}} pods. Upgrade will be performed in stages: control plane first, then node groups with rolling updates. Testing deprecated API versions and validating workload compatibility.",
+    "changeType": "infrastructure",
+    "currentState": "Kubernetes {{currentVersion}} cluster with {{nodeCount}} nodes across 3 availability zones. Running {{podCount}} pods with various workloads (deployments, statefulsets, daemonsets). Using standard CNI, CSI drivers, and ingress controllers.",
+    "proposedState": "Kubernetes {{targetVersion}} cluster with same node count and configuration. All deprecated APIs updated. Workloads tested for compatibility. Rolling node group updates with 25% surge capacity to maintain availability during upgrade.",
+    "trafficPatterns": "Production cluster serving customer traffic 24/7. Peak load during business hours with auto-scaling enabled. Critical services include API gateways, microservices, and data processing jobs. PodDisruptionBudgets configured for high-availability services."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "id": "ec2-instance-type-change",
+  "name": "EC2 Instance Type Change",
+  "category": "compute",
+  "difficulty": "medium",
+  "description": "Change EC2 instance types for better performance, cost optimization, or new features",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentType",
+      "label": "Current Instance Type",
+      "type": "text",
+      "default": "m5.xlarge",
+      "required": true
+    },
+    {
+      "name": "targetType",
+      "label": "Target Instance Type",
+      "type": "text",
+      "default": "m6i.xlarge",
+      "required": true
+    },
+    {
+      "name": "instanceCount",
+      "label": "Number of Instances",
+      "type": "number",
+      "default": "15",
+      "required": true
+    },
+    {
+      "name": "avgCPU",
+      "label": "Current Average CPU Usage (%)",
+      "type": "number",
+      "default": "65",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Changing EC2 instance type from {{currentType}} to {{targetType}} for {{instanceCount}} instances in Auto Scaling Group. Current average CPU utilization: {{avgCPU}}%. Migration will use rolling update strategy to maintain availability. Testing application compatibility with new instance type and validating performance improvements.",
+    "changeType": "compute",
+    "currentState": "Auto Scaling Group with {{instanceCount}} {{currentType}} instances across 3 AZs. Current CPU: {{avgCPU}}%, Memory: 70%. Application load balanced via ALB. Health checks every 30 seconds. Deployment uses blue-green strategy.",
+    "proposedState": "Launch template updated to {{targetType}}. Rolling update with 25% batch size and 5-minute wait between batches. New instances tested in staging environment. CloudWatch alarms for CPU, memory, and application metrics. Rollback plan prepared.",
+    "trafficPatterns": "Production web application serving 24/7 traffic. Peak load during business hours (9 AM - 6 PM). Auto-scaling based on CPU (target 70%). Average request rate: 5000 req/min. Response time SLA: 500ms p99."
+  }
+}

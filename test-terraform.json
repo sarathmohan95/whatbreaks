@@ -1,0 +1,50 @@
+{
+  "format_version": "1.0",
+  "terraform_version": "1.5.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.data",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "data",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-company-data-prod",
+          "region": "us-east-1"
+        }
+      }
+    },
+    {
+      "address": "aws_s3_bucket_versioning.data",
+      "mode": "managed",
+      "type": "aws_s3_bucket_versioning",
+      "name": "data",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "bucket": "my-company-data-prod",
+          "versioning_configuration": {
+            "status": "Enabled"
+          }
+        }
+      }
+    },
+    {
+      "address": "aws_iam_role.lambda_role",
+      "mode": "managed",
+      "type": "aws_iam_role",
+      "name": "lambda_role",
+      "change": {
+        "actions": ["create"],
+        "before": null,
+        "after": {
+          "name": "data-processor-role",
+          "assume_role_policy": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"lambda.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+        }
+      }
+    }
+  ]
+}

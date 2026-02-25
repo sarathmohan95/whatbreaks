@@ -1,0 +1,45 @@
+{
+  "id": "k8s-ingress-migration",
+  "name": "Kubernetes Ingress Controller Migration",
+  "category": "kubernetes",
+  "difficulty": "high",
+  "description": "Migrate from one ingress controller to another (e.g., NGINX to AWS ALB Ingress Controller)",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "currentController",
+      "label": "Current Ingress Controller",
+      "type": "text",
+      "default": "NGINX Ingress",
+      "required": true
+    },
+    {
+      "name": "targetController",
+      "label": "Target Ingress Controller",
+      "type": "text",
+      "default": "AWS ALB Ingress Controller",
+      "required": true
+    },
+    {
+      "name": "ingressCount",
+      "label": "Number of Ingress Resources",
+      "type": "number",
+      "default": "25",
+      "required": true
+    },
+    {
+      "name": "requestsPerSecond",
+      "label": "Total Requests per Second",
+      "type": "number",
+      "default": "5000",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Migrating from {{currentController}} to {{targetController}}. Currently managing {{ingressCount}} ingress resources handling {{requestsPerSecond}} requests/second. Migration involves updating ingress annotations, DNS cutover, and validating SSL/TLS certificates and routing rules.",
+    "changeType": "infrastructure",
+    "currentState": "{{currentController}} managing {{ingressCount}} ingress resources. Handling {{requestsPerSecond}} req/sec across multiple services. SSL termination at ingress. Custom annotations for rate limiting, CORS, and authentication.",
+    "proposedState": "{{targetController}} deployed alongside existing controller. Ingress resources updated with new annotations. Gradual traffic migration using weighted DNS or canary deployments. SSL certificates migrated to new controller. Monitoring for latency and error rates.",
+    "trafficPatterns": "Production traffic 24/7 with global users. Peak traffic during US business hours. Mix of API calls, web traffic, and WebSocket connections. SSL/TLS required for all traffic. Rate limiting and WAF rules configured."
+  }
+}

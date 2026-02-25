@@ -1,0 +1,46 @@
+{
+  "id": "rds-multi-az",
+  "name": "RDS Multi-AZ Failover Configuration",
+  "category": "database",
+  "difficulty": "medium",
+  "description": "Enable Multi-AZ deployment for RDS database to improve availability and durability",
+  "usageCount": 0,
+  "parameters": [
+    {
+      "name": "dbEngine",
+      "label": "Database Engine",
+      "type": "select",
+      "options": ["PostgreSQL", "MySQL", "MariaDB", "Oracle", "SQL Server"],
+      "default": "PostgreSQL",
+      "required": true
+    },
+    {
+      "name": "instanceType",
+      "label": "RDS Instance Type",
+      "type": "text",
+      "default": "db.r5.xlarge",
+      "required": true
+    },
+    {
+      "name": "storageSize",
+      "label": "Storage Size (GB)",
+      "type": "number",
+      "default": "1000",
+      "required": true
+    },
+    {
+      "name": "connectionCount",
+      "label": "Average Connection Count",
+      "type": "number",
+      "default": "200",
+      "required": true
+    }
+  ],
+  "template": {
+    "description": "Enabling Multi-AZ deployment for {{dbEngine}} RDS instance ({{instanceType}}) with {{storageSize}}GB storage. Currently single-AZ deployment with {{connectionCount}} average connections. Multi-AZ will provide automatic failover capability with synchronous replication to standby instance.",
+    "changeType": "database",
+    "currentState": "Single-AZ RDS {{dbEngine}} instance ({{instanceType}}) in us-east-1a. {{storageSize}}GB gp3 storage. Automated backups enabled with 7-day retention. {{connectionCount}} average connections from application tier.",
+    "proposedState": "Multi-AZ RDS deployment with primary in us-east-1a and standby in us-east-1b. Synchronous replication enabled. Automatic failover configured with 60-120 second RTO. Same instance type and storage configuration.",
+    "trafficPatterns": "Production database with 24/7 availability requirement. Peak load during business hours (8 AM - 6 PM). Mix of OLTP transactions and analytical queries. Critical for order processing and customer data."
+  }
+}
