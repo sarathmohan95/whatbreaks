@@ -191,7 +191,9 @@ export default function AnalyzePage() {
       const response = await fetch('/api/premortem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+        }),
       });
 
       const result = await response.json();
@@ -232,9 +234,9 @@ export default function AnalyzePage() {
         template: {
           description: formData.description,
           changeType: formData.changeType,
-          currentState: formData.currentState,
-          proposedState: formData.proposedState,
-          trafficPatterns: formData.trafficPatterns,
+          currentState: formData.currentState || '',
+          proposedState: formData.proposedState || '',
+          trafficPatterns: formData.trafficPatterns || '',
         },
         parameters: [],
         isPublic: false,
@@ -600,6 +602,7 @@ Proposed: Redis cluster with 3 shards, one per AZ"
                 </details>
               </div>
 
+              {/* Analysis Mode Selector */}
               {/* Submit */}
               <div className="flex gap-3">
                 <Button

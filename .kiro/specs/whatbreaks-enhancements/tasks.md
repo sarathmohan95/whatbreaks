@@ -582,3 +582,408 @@ Documentation (48) can be done in parallel
 - `frontend/src/app/premortem/page.tsx` - Removed debug logs
 
 **Next Steps**: Phase 3.2 - AWS Context Integration (optional feature to fetch current AWS infrastructure)
+
+
+---
+
+## Phase 4: Multi-Agent Analysis System
+
+### Backend Tasks - Core Multi-Agent Infrastructure
+
+- [ ] 55. Create Multi-Agent Module Structure
+  - [ ] 55.1 Create backend/premortem-lambda/multi-agent.js
+  - [ ] 55.2 Define MultiAgentOrchestrator class
+  - [ ] 55.3 Define BaseConsultant abstract class
+  - [ ] 55.4 Create consultant registry structure
+  - [ ] 55.5 Add error handling utilities
+  - [ ] 55.6 Add logging utilities for agent tracking
+
+- [ ] 56. Implement Specialist Agent Classes
+  - [ ] 56.1 Create SecurityConsultant class
+  - [ ] 56.2 Create ReliabilityEngineer class
+  - [ ] 56.3 Create PerformanceArchitect class
+  - [ ] 56.4 Create CostOptimizer class
+  - [ ] 56.5 Create OperationsSpecialist class
+  - [ ] 56.6 Implement analyze() method for each specialist
+  - [ ] 56.7 Implement parseResponse() for each specialist
+
+- [ ] 57. Build Specialist Prompts
+  - [ ] 57.1 Create buildSecurityPrompt() with focus areas
+  - [ ] 57.2 Create buildReliabilityPrompt() with focus areas
+  - [ ] 57.3 Create buildPerformancePrompt() with focus areas
+  - [ ] 57.4 Create buildCostPrompt() with focus areas
+  - [ ] 57.5 Create buildOperationsPrompt() with focus areas
+  - [ ] 57.6 Add JSON output format specifications
+  - [ ] 57.7 Add confidence scoring instructions
+
+- [ ] 58. Implement Parallel Execution
+  - [ ] 58.1 Create executeSpecialistsInParallel() method
+  - [ ] 58.2 Use Promise.all() for concurrent analysis
+  - [ ] 58.3 Add timeout handling per specialist
+  - [ ] 58.4 Implement graceful degradation (continue if one fails)
+  - [ ] 58.5 Collect and aggregate specialist results
+  - [ ] 58.6 Add performance tracking per specialist
+
+- [ ] 59. Implement Synthesis Logic
+  - [ ] 59.1 Create synthesize() method in orchestrator
+  - [ ] 59.2 Build synthesis prompt with all specialist findings
+  - [ ] 59.3 Identify consensus risks (multiple agents agree)
+  - [ ] 59.4 Identify dissenting opinions
+  - [ ] 59.5 Calculate agreement levels
+  - [ ] 59.6 Resolve conflicts and trade-offs
+  - [ ] 59.7 Generate executive summary
+  - [ ] 59.8 Create unified preventive action plan
+
+- [ ] 60. Update Lambda Handler
+  - [ ] 60.1 Add analysisMode parameter (quick/deep)
+  - [ ] 60.2 Route to single-agent for quick mode
+  - [ ] 60.3 Route to multi-agent for deep mode
+  - [ ] 60.4 Update handlePreMortem to support both modes
+  - [ ] 60.5 Add multi-agent response formatting
+  - [ ] 60.6 Update error handling for multi-agent failures
+
+### Backend Tasks - Data Structures & Parsing
+
+- [ ] 61. Define TypeScript Interfaces
+  - [ ] 61.1 Create SpecialistAnalysis interface
+  - [ ] 61.2 Create SynthesizedReport interface
+  - [ ] 61.3 Create ConsensusRisk interface
+  - [ ] 61.4 Create DissentingOpinion interface
+  - [ ] 61.5 Create TradeOff interface
+  - [ ] 61.6 Add JSDoc comments for JavaScript
+
+- [ ] 62. Implement Response Parsing
+  - [ ] 62.1 Create parseSpecialistAnalysis() function
+  - [ ] 62.2 Create parseSynthesizedReport() function
+  - [ ] 62.3 Handle JSON parsing errors gracefully
+  - [ ] 62.4 Validate required fields
+  - [ ] 62.5 Add default values for missing data
+  - [ ] 62.6 Extract confidence scores
+
+- [ ] 63. Implement Risk Aggregation
+  - [ ] 63.1 Create aggregateRisks() function
+  - [ ] 63.2 Deduplicate similar risks across specialists
+  - [ ] 63.3 Calculate consensus scores
+  - [ ] 63.4 Merge risk descriptions
+  - [ ] 63.5 Combine mitigation strategies
+  - [ ] 63.6 Track which consultant identified each risk
+
+### Infrastructure Tasks
+
+- [ ] 64. Update Lambda Configuration
+  - [ ] 64.1 Increase timeout to 180 seconds (3 minutes)
+  - [ ] 64.2 Increase memory to 2048 MB
+  - [ ] 64.3 Add ENABLE_MULTI_AGENT environment variable
+  - [ ] 64.4 Run terraform plan
+  - [ ] 64.5 Run terraform apply
+
+- [ ] 65. Update API Gateway
+  - [ ] 65.1 Add analysisMode parameter to POST /premortem
+  - [ ] 65.2 Update request validation
+  - [ ] 65.3 Update CORS configuration
+  - [ ] 65.4 Run terraform apply
+
+### Frontend Tasks - UI Components
+
+- [ ] 66. Create Multi-Agent UI Components
+  - [ ] 66.1 Create ConsultantCard.tsx component
+  - [ ] 66.2 Create ConsensusRiskCard.tsx component
+  - [ ] 66.3 Create DissentingOpinionCard.tsx component
+  - [ ] 66.4 Create TradeOffCard.tsx component
+  - [ ] 66.5 Create AnalysisProgressBar.tsx component
+  - [ ] 66.6 Create ConsultantAvatar.tsx component
+
+- [ ] 67. Create Analysis Mode Selector
+  - [ ] 67.1 Add mode selector to analyze page
+  - [ ] 67.2 Create "Quick Analysis" option (single agent, free)
+  - [ ] 67.3 Create "Deep Analysis" option (multi-agent, premium)
+  - [ ] 67.4 Add feature comparison tooltip
+  - [ ] 67.5 Add pricing information
+  - [ ] 67.6 Style with visual differentiation
+
+- [ ] 68. Implement Progress Tracking
+  - [ ] 68.1 Add WebSocket or polling for progress updates
+  - [ ] 68.2 Show specialist status (pending/analyzing/complete)
+  - [ ] 68.3 Display progress percentage per specialist
+  - [ ] 68.4 Show synthesis phase indicator
+  - [ ] 68.5 Add estimated time remaining
+  - [ ] 68.6 Add cancel analysis button
+
+### Frontend Tasks - Report Display
+
+- [ ] 69. Update Pre-Mortem Page for Multi-Agent
+  - [ ] 69.1 Detect multi-agent report format
+  - [ ] 69.2 Add "By Consultant" section
+  - [ ] 69.3 Display consultant cards with findings
+  - [ ] 69.4 Show overall scores per consultant
+  - [ ] 69.5 Add consultant filter/tabs
+  - [ ] 69.6 Update TypeScript interfaces
+
+- [ ] 70. Implement Consensus Risk Display
+  - [ ] 70.1 Create "High Consensus Risks" section
+  - [ ] 70.2 Show agreement level badges
+  - [ ] 70.3 Display which consultants identified each risk
+  - [ ] 70.4 Add consensus percentage visualization
+  - [ ] 70.5 Sort by agreement level
+  - [ ] 70.6 Add "Show All Consultants" expand button
+
+- [ ] 71. Implement Dissenting Opinions Display
+  - [ ] 71.1 Create "Dissenting Opinions" section
+  - [ ] 71.2 Show minority viewpoints
+  - [ ] 71.3 Display reasoning for disagreement
+  - [ ] 71.4 Add "Why Others Disagree" explanations
+  - [ ] 71.5 Style to differentiate from consensus
+  - [ ] 71.6 Add toggle to show/hide dissent
+
+- [ ] 72. Implement Trade-Offs Display
+  - [ ] 72.1 Create "Trade-Offs & Decisions" section
+  - [ ] 72.2 Display option A vs option B comparison
+  - [ ] 72.3 Show pros/cons for each option
+  - [ ] 72.4 Display recommendation with reasoning
+  - [ ] 72.5 Add visual comparison layout
+  - [ ] 72.6 Add "Learn More" expandable details
+
+### Frontend Tasks - API Integration
+
+- [ ] 73. Update API Client
+  - [ ] 73.1 Add analysisMode parameter to API calls
+  - [ ] 73.2 Update request types for multi-agent
+  - [ ] 73.3 Update response types for multi-agent
+  - [ ] 73.4 Add progress polling endpoint
+  - [ ] 73.5 Add error handling for multi-agent failures
+  - [ ] 73.6 Add timeout handling (3 minutes)
+
+- [ ] 74. Update Analyze Page
+  - [ ] 74.1 Add mode selection state
+  - [ ] 74.2 Pass analysisMode to API
+  - [ ] 74.3 Show different loading states per mode
+  - [ ] 74.4 Update success handling for multi-agent
+  - [ ] 74.5 Add cost estimate display
+  - [ ] 74.6 Update redirect with mode parameter
+
+### Testing Tasks
+
+- [ ] 75. Backend Unit Tests
+  - [ ] 75.1 Test SecurityConsultant analysis
+  - [ ] 75.2 Test ReliabilityEngineer analysis
+  - [ ] 75.3 Test PerformanceArchitect analysis
+  - [ ] 75.4 Test CostOptimizer analysis
+  - [ ] 75.5 Test OperationsSpecialist analysis
+  - [ ] 75.6 Test parallel execution
+  - [ ] 75.7 Test synthesis logic
+  - [ ] 75.8 Test graceful degradation (one specialist fails)
+
+- [ ] 76. Integration Tests
+  - [ ] 76.1 Test end-to-end multi-agent flow
+  - [ ] 76.2 Test quick vs deep analysis modes
+  - [ ] 76.3 Test consensus risk identification
+  - [ ] 76.4 Test dissenting opinion handling
+  - [ ] 76.5 Test trade-off resolution
+  - [ ] 76.6 Verify response format consistency
+
+- [ ] 77. Quality Validation Tests
+  - [ ] 77.1 Compare multi-agent vs single-agent results
+  - [ ] 77.2 Measure risk identification improvement
+  - [ ] 77.3 Validate consensus accuracy
+  - [ ] 77.4 Test with good vs bad configurations
+  - [ ] 77.5 Measure false positive reduction
+  - [ ] 77.6 Validate confidence scoring
+
+- [ ] 78. Performance Tests
+  - [ ] 78.1 Measure parallel execution time
+  - [ ] 78.2 Test Lambda timeout handling
+  - [ ] 78.3 Measure token usage per specialist
+  - [ ] 78.4 Calculate cost per analysis
+  - [ ] 78.5 Test concurrent multi-agent requests
+  - [ ] 78.6 Validate memory usage
+
+### Monitoring & Observability
+
+- [ ] 79. Add CloudWatch Metrics
+  - [ ] 79.1 Track multi-agent analysis count
+  - [ ] 79.2 Track per-specialist execution time
+  - [ ] 79.3 Track synthesis time
+  - [ ] 79.4 Track specialist failure rate
+  - [ ] 79.5 Track consensus rate
+  - [ ] 79.6 Track cost per analysis
+
+- [ ] 80. Add CloudWatch Alarms
+  - [ ] 80.1 Alarm for high specialist failure rate
+  - [ ] 80.2 Alarm for Lambda timeout
+  - [ ] 80.3 Alarm for high cost per analysis
+  - [ ] 80.4 Alarm for low consensus rate
+  - [ ] 80.5 Alarm for synthesis failures
+
+- [ ] 81. Add Logging
+  - [ ] 81.1 Log specialist analysis start/end
+  - [ ] 81.2 Log synthesis start/end
+  - [ ] 81.3 Log consensus risk identification
+  - [ ] 81.4 Log dissenting opinions
+  - [ ] 81.5 Log trade-off resolutions
+  - [ ] 81.6 Add structured logging with JSON
+
+### Documentation Tasks
+
+- [ ] 82. Update Documentation
+  - [ ] 82.1 Document multi-agent architecture
+  - [ ] 82.2 Document specialist roles and focus areas
+  - [ ] 82.3 Document synthesis algorithm
+  - [ ] 82.4 Document quick vs deep analysis modes
+  - [ ] 82.5 Add API documentation for new parameters
+  - [ ] 82.6 Create troubleshooting guide
+
+- [ ] 83. Create User Guide
+  - [ ] 83.1 Explain when to use quick vs deep analysis
+  - [ ] 83.2 Explain consensus risks
+  - [ ] 83.3 Explain dissenting opinions
+  - [ ] 83.4 Explain trade-offs
+  - [ ] 83.5 Add screenshots and examples
+  - [ ] 83.6 Create FAQ section
+
+### Deployment & Rollout
+
+- [ ] 84. Deploy Backend Updates
+  - [ ] 84.1 Rebuild Lambda package with multi-agent code
+  - [ ] 84.2 Run terraform plan
+  - [ ] 84.3 Run terraform apply
+  - [ ] 84.4 Test quick analysis mode
+  - [ ] 84.5 Test deep analysis mode
+  - [ ] 84.6 Verify all specialists working
+
+- [ ] 85. Deploy Frontend Updates
+  - [ ] 85.1 Build frontend with new components
+  - [ ] 85.2 Test mode selector
+  - [ ] 85.3 Test progress tracking
+  - [ ] 85.4 Test multi-agent report display
+  - [ ] 85.5 Test on mobile devices
+  - [ ] 85.6 Deploy to production
+
+- [ ] 86. A/B Testing Setup
+  - [ ] 86.1 Create A/B test configuration
+  - [ ] 86.2 Split traffic 50/50 (single vs multi-agent)
+  - [ ] 86.3 Track quality metrics
+  - [ ] 86.4 Track user satisfaction
+  - [ ] 86.5 Track conversion to deep analysis
+  - [ ] 86.6 Analyze results after 1 week
+
+### Premium Feature Implementation (Optional)
+
+- [ ] 87. Add Pricing Logic
+  - [ ] 87.1 Define pricing tiers (free quick, paid deep)
+  - [ ] 87.2 Add usage tracking per user
+  - [ ] 87.3 Implement rate limiting for free tier
+  - [ ] 87.4 Add payment integration (Stripe)
+  - [ ] 87.5 Create subscription management
+  - [ ] 87.6 Add billing dashboard
+
+- [ ] 88. Add Usage Analytics
+  - [ ] 88.1 Track quick vs deep analysis usage
+  - [ ] 88.2 Track conversion rate to paid
+  - [ ] 88.3 Track revenue per user
+  - [ ] 88.4 Track cost per analysis
+  - [ ] 88.5 Calculate profit margins
+  - [ ] 88.6 Create analytics dashboard
+
+---
+
+## Phase 4 Task Dependencies
+
+```
+Core Infrastructure (55-60) → Data Structures (61-63) → Infrastructure (64-65)
+                                                      ↓
+                                              Frontend Components (66-68)
+                                                      ↓
+                                              Report Display (69-72)
+                                                      ↓
+                                              API Integration (73-74)
+                                                      ↓
+                                              Testing (75-78)
+                                                      ↓
+                                              Monitoring (79-81)
+                                                      ↓
+                                              Documentation (82-83)
+                                                      ↓
+                                              Deployment (84-86)
+                                                      ↓
+                                              Premium Feature (87-88) [Optional]
+```
+
+## Phase 4 Estimated Timeline
+
+- Core Multi-Agent Infrastructure: 3-4 days
+  - Multi-agent module structure: 0.5 day
+  - Specialist agent classes: 1 day
+  - Specialist prompts: 0.5 day
+  - Parallel execution: 0.5 day
+  - Synthesis logic: 1 day
+  - Lambda handler updates: 0.5 day
+
+- Data Structures & Parsing: 1 day
+  - TypeScript interfaces: 0.25 day
+  - Response parsing: 0.5 day
+  - Risk aggregation: 0.25 day
+
+- Infrastructure: 0.5 day
+  - Lambda configuration: 0.25 day
+  - API Gateway updates: 0.25 day
+
+- Frontend Components: 2-3 days
+  - Multi-agent UI components: 1 day
+  - Analysis mode selector: 0.5 day
+  - Progress tracking: 0.5-1 day
+
+- Report Display: 2 days
+  - Pre-mortem page updates: 0.5 day
+  - Consensus risk display: 0.5 day
+  - Dissenting opinions display: 0.5 day
+  - Trade-offs display: 0.5 day
+
+- API Integration: 1 day
+  - API client updates: 0.5 day
+  - Analyze page updates: 0.5 day
+
+- Testing: 2-3 days
+  - Backend unit tests: 1 day
+  - Integration tests: 0.5 day
+  - Quality validation: 0.5-1 day
+  - Performance tests: 0.5 day
+
+- Monitoring & Observability: 1 day
+  - CloudWatch metrics: 0.5 day
+  - CloudWatch alarms: 0.25 day
+  - Logging: 0.25 day
+
+- Documentation: 1 day
+  - Technical documentation: 0.5 day
+  - User guide: 0.5 day
+
+- Deployment & Rollout: 1 day
+  - Backend deployment: 0.25 day
+  - Frontend deployment: 0.25 day
+  - A/B testing setup: 0.5 day
+
+- Premium Feature (Optional): 2-3 days
+  - Pricing logic: 1-1.5 days
+  - Usage analytics: 1-1.5 days
+
+**Total: 14-18 days (without premium feature)**
+**Total: 16-21 days (with premium feature)**
+
+## Phase 4 Notes
+
+- Multi-agent analysis is the most complex feature yet
+- Requires careful prompt engineering for each specialist
+- Synthesis logic is critical for quality
+- Performance optimization needed for parallel execution
+- Cost monitoring essential (7.5x increase per analysis)
+- A/B testing will validate quality improvements
+- Premium feature can be added later if MVP successful
+- Consider starting with 3 specialists (Security, Reliability, Performance) for MVP
+- Add Cost and Operations specialists in Phase 4.1
+- Monitor token usage and costs closely during testing
+- Graceful degradation is critical - single specialist failure shouldn't break entire analysis
+- Consider caching common patterns to reduce costs
+- WebSocket or Server-Sent Events for real-time progress updates
+- Mobile responsiveness important for consultant cards
+- Consensus visualization should be intuitive and clear
+- Trade-off display should help users make informed decisions

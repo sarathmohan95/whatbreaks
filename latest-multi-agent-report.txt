@@ -1,0 +1,100 @@
+﻿# EKS 1.28 Upgrade Pre-Mortem Analysis
+
+## 1. ASSUMED OUTCOME
+Severity: Critical
+Duration: 4.5 hours
+Impact: Complete service unavailability for 80% of production workloads
+Affected: 
+- All customer-facing applications
+- Internal tooling and monitoring
+- Data pipeline processing
+- Authentication services
+
+## 2. TRIGGERING EVENT
+Initial Trigger: Incompatibility between Istio 1.18 and Kubernetes 1.28 control plane
+Timing: T+2h after control plane upgrade
+Root Cause: Breaking changes in Kubernetes EndpointSlice API behavior caused Istio sidecar injection failures
+
+## 3. HIDDEN DEPENDENCIES
+- Admission webhook API v1beta1 deprecated in 1.28
+- Istio's dependency on specific EndpointSlice behavior
+- Custom CRDs using deprecated apiVersions
+- cert-manager's webhook CA bundle refresh mechanism
+- StatefulSet volume attachment behavior changes
+
+## 4. CASCADE TIMELINE
+T+0h: Control plane upgrade begins
+T+1h: Control plane upgrade complete
+T+2h: Node rotation begins
+T+2.5h: Admission webhooks begin failing
+T+2.7h: New pods fail to start due to sidecar injection errors
+T+3h: StatefulSet pods unable to reattach volumes
+T+3.5h: Service mesh degradation complete
+T+4h: Attempted rollback fails due to version mismatch
+T+4.5h: Emergency restore from backup begins
+
+## 5. SYSTEM COUPLING
+- Tight coupling between admission webhooks and API versions
+- Istio mesh and pod lifecycle dependencies
+- StatefulSet volume management and node drainage
+- HPA and metrics server version dependencies
+- ALB controller's reliance on specific CRD versions
+
+## 6. RISK ANALYSIS
+
+RISK: Admission Webhook Failure
+Description: v1beta1 API removal breaks existing webhooks
+Probability: 9
+Impact: 10
+Category: Technical
+Mitigation: Update all webhooks to v1 API before upgrade
+
+RISK: Istio Version Incompatibility
+Description: Untested Istio compatibility leads to mesh failure
+Probability: 8
+Impact: 9
+Category: Technical
+Mitigation: Test Istio 1.18 with K8s 1.28 in staging
+
+RISK: StatefulSet Data Loss
+Description: Volume reattachment failures during node rotation
+Probability: 6
+Impact: 10
+Category: Technical
+Mitigation: Implement pre-upgrade volume snapshot backup
+
+RISK: Rollback Complexity
+Description: No clean rollback path defined
+Probability: 7
+Impact: 8
+Category: Operational
+Mitigation: Create detailed rollback procedure and test in staging
+
+## 7. PREVENTIVE ACTIONS
+
+High Priority:
+- Create staging environment matching production versions
+- Test full upgrade path in staging
+- Update all deprecated API versions
+- Document and test rollback procedure
+- Implement automated pre-flight checks
+
+Medium Priority:
+- Set up monitoring for deprecated API usage
+- Create node drain automation with safety checks
+- Update all operators to 1.28-compatible versions
+- Implement gradual rollout strategy
+
+Low Priority:
+- Review all CRDs for version compatibility
+- Update runbook documentation
+- Create automated version compatibility matrix
+- Implement automatic backup before upgrade
+
+Each preventive action should be completed and validated before attempting the upgrade. The most critical actions revolve around API version updates and testing the upgrade path in a representative environment.
+
+Additional Notes:
+- The automatic "terraform apply" approach is too risky for this scale
+- Manual control points should be added between major steps
+- Consider blue-green deployment instead of in-place upgrade
+- Need to verify PDB settings won't prevent necessary pod movements

@@ -8,6 +8,7 @@
 const { BedrockRuntimeClient, InvokeModelCommand } = require('@aws-sdk/client-bedrock-runtime');
 const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, QueryCommand, UpdateCommand, DeleteCommand } = require('@aws-sdk/lib-dynamodb');
+const { BedrockAgentsOrchestrator, isBedrockAgentsEnabled } = require('./bedrock-agents');
 
 const bedrockClient = new BedrockRuntimeClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const dynamoClient = DynamoDBDocumentClient.from(new DynamoDBClient({ region: process.env.AWS_REGION || 'us-east-1' }));
@@ -60,7 +61,7 @@ exports.handler = async (event) => {
 
 async function handleGeneratePreMortem(event) {
   const body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
-  const { description, changeType, currentState, proposedState, trafficPatterns } = body;
+  const { description, changeType, currentState, proposedState, trafficPatterns, analysisMode } = body;
 
   // Validate input
   if (!description || description.length < 50) {
@@ -71,14 +72,24 @@ async function handleGeneratePreMortem(event) {
     };
   }
 
-  // Generate pre-mortem using Bedrock
-  const preMortem = await generatePreMortem({
+  const mode = analysisMode || 'quick'; // 'quick' or 'deep'
+  console.log(`🎯 Analysis mode: ${mode}`);
+
+  let preMortem;
+
+  // Use single-agent for both quick and deep modes
+  // Deep mode uses Claude 3.5 Sonnet with more detailed prompts
+  console.log(`${mode === 'deep' ? '🚀' : '⚡'} Starting single-agent ${mode} analysis...`);
+  
+  preMortem = await generatePreMortem({
     description,
     changeType: changeType || 'infrastructure',
     currentState,
     proposedState,
     trafficPatterns,
+    deepMode: mode === 'deep',
   });
+  preMortem.analysisMode = mode;
 
   // Save to DynamoDB if enabled
   if (ENABLE_SAVE) {
@@ -183,14 +194,21 @@ async function handleGetReport(event) {
 
 async function generatePreMortem(input) {
   const prompt = buildPreMortemPrompt(input);
+  
+  // Use Claude 3.5 Sonnet for both quick and deep modes
+  // Deep mode gets more tokens and enhanced prompt
+  const maxTokens = input.deepMode ? 6000 : 4000;
+  const modelId = 'us.anthropic.claude-3-5-sonnet-20241022-v2:0';
+  
+  console.log(`📝 Using ${modelId} with ${maxTokens} max tokens`);
 
   const params = {
-    modelId: 'us.anthropic.claude-3-5-sonnet-20241022-v2:0',
+    modelId,
     contentType: 'application/json',
     accept: 'application/json',
     body: JSON.stringify({
       anthropic_version: 'bedrock-2023-05-31',
-      max_tokens: 4000,
+      max_tokens: maxTokens,
       messages: [
         {
           role: 'user',
@@ -209,7 +227,7 @@ async function generatePreMortem(input) {
   const parsedReport = parseReport(fullReport);
 
   return {
-    id: `pm-${Date.now()}`,
+    id: `pm-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     timestamp: new Date().toISOString(),
     input,
     changeSummary: input.description.substring(0, 200),
@@ -217,7 +235,8 @@ async function generatePreMortem(input) {
     parsedReport,
     metadata: {
       model: 'claude-3-5-sonnet',
-      version: '1.0',
+      version: '2.0',
+      deepMode: input.deepMode || false,
     },
   };
 }
@@ -285,7 +304,16 @@ function parseReport(report) {
     } else {
       parsed.riskLevel = 'LOW';
     }
+  } else {
+    // No risks found - set defaults
+    console.warn('⚠️ No risks found in report, setting defaults');
+    parsed.overallRiskScore = 0;
+    parsed.riskLevel = 'UNKNOWN';
+    parsed.risks = [];
   }
+
+  // Parse resource dependencies
+  parsed.resourceDependencies = parseResourceDependencies(report);
 
   return parsed;
 }
@@ -295,9 +323,7 @@ function parseRisks(report) {
   
   console.log('Parsing risks from report...');
   
-  // Try multiple patterns to be more flexible
-  
-  // Pattern 1: Strict format with RISK: prefix
+  // Pattern 1: Strict format with RISK: prefix (single-agent format)
   const strictPattern = /RISK:\s*(.+?)\s*\nDescription:\s*(.+?)\s*\nProbability:\s*(\d+)\s*\nImpact:\s*(\d+)\s*\nCategory:\s*(\w+)\s*\nMitigation:\s*(.+?)(?=\n\nRISK:|$)/gs;
   
   let match;
@@ -321,7 +347,91 @@ function parseRisks(report) {
   
   console.log(`Found ${risks.length} risks using strict pattern`);
   
-  // If no risks found, try a more lenient pattern
+  // Pattern 2: Numbered list format with bold titles (multi-agent actual format)
+  if (risks.length === 0) {
+    console.log('Trying numbered list pattern with severity/probability/impact...');
+    
+    // Match: 1. **Title (Category)**: Description
+    //        - Severity: Major
+    //        - Probability: 6/10
+    //        - Impact: 8/10
+    //        - Mitigation: ...
+    const numberedPattern = /\d+\.\s*\*\*(.+?)\s*\(([^)]+)\)\*\*:\s*(.+?)(?:\n\s*-\s*Severity:\s*(\w+))?(?:\n\s*-\s*Probability:\s*(\d+)(?:\/10)?)?(?:\n\s*-\s*Impact:\s*(\d+)(?:\/10)?)?(?:\n\s*-\s*Mitigation:\s*(.+?))?(?=\n\n\d+\.\s*\*\*|\n\n##|$)/gs;
+    
+    while ((match = numberedPattern.exec(report)) !== null) {
+      const [, title, category, description, severity, probability, impact, mitigation] = match;
+      
+      const prob = probability ? parseInt(probability, 10) : estimateProbability(severity || 'medium');
+      const imp = impact ? parseInt(impact, 10) : estimateImpact(severity || 'medium');
+      
+      risks.push({
+        id: `risk-${riskId++}`,
+        title: title.trim(),
+        description: description.trim(),
+        probability: prob,
+        impact: imp,
+        riskScore: prob * imp,
+        category: category.trim().toLowerCase().split(',')[0].trim(), // Take first category if multiple
+        mitigation: mitigation ? mitigation.trim() : 'See preventive actions'
+      });
+    }
+    
+    console.log(`Found ${risks.length} risks using numbered list pattern`);
+  }
+  
+  // Pattern 3: Multi-agent format with specialist sections
+  if (risks.length === 0) {
+    console.log('Trying multi-agent specialist sections pattern...');
+    
+    const specialistSections = [
+      'Security Analysis',
+      'Reliability Analysis', 
+      'Performance Analysis',
+      'Cost Analysis',
+      'Operations Analysis',
+      'Consensus Risks'
+    ];
+    
+    for (const section of specialistSections) {
+      const sectionRegex = new RegExp(`###?\\s*${section}[\\s\\S]*?(?=###|##\\s*[A-Z]|$)`, 'i');
+      const sectionMatch = report.match(sectionRegex);
+      
+      if (sectionMatch) {
+        const sectionText = sectionMatch[0];
+        console.log(`Found ${section} section, extracting risks...`);
+        
+        // Extract risks from this section - look for bullet points or numbered lists with severity/probability/impact
+        const riskPattern = /[-*]\s*\*\*(.+?)\*\*[:\s]*(.+?)(?:Severity|Probability|Risk)[:\s]*(\w+|[\d\/]+)[\s\S]*?(?=[-*]\s*\*\*|###|##|$)/gi;
+        
+        let sectionRiskMatch;
+        while ((sectionRiskMatch = riskPattern.exec(sectionText)) !== null) {
+          const [, title, description, severity] = sectionRiskMatch;
+          
+          // Try to extract probability and impact if present
+          const probMatch = sectionRiskMatch[0].match(/Probability[:\s]*(\d+)/i);
+          const impactMatch = sectionRiskMatch[0].match(/Impact[:\s]*(\d+)/i);
+          
+          const prob = probMatch ? parseInt(probMatch[1], 10) : estimateProbability(severity);
+          const imp = impactMatch ? parseInt(impactMatch[1], 10) : estimateImpact(severity);
+          
+          risks.push({
+            id: `risk-${riskId++}`,
+            title: title.trim(),
+            description: description.trim().substring(0, 500),
+            probability: prob,
+            impact: imp,
+            riskScore: prob * imp,
+            category: section.toLowerCase().replace(' analysis', ''),
+            mitigation: 'See preventive actions section'
+          });
+        }
+      }
+    }
+    
+    console.log(`Found ${risks.length} risks using multi-agent pattern`);
+  }
+  
+  // Pattern 4: Lenient pattern for any format
   if (risks.length === 0) {
     console.log('Trying lenient pattern...');
     // Look for any section with Probability and Impact scores
@@ -358,12 +468,89 @@ function parseRisks(report) {
   return risks;
 }
 
+// Helper function to estimate probability from severity text
+function estimateProbability(severity) {
+  const s = severity.toLowerCase();
+  if (s.includes('critical') || s.includes('high') || s.includes('9') || s.includes('10')) return 8;
+  if (s.includes('major') || s.includes('medium') || s.includes('7') || s.includes('8')) return 6;
+  if (s.includes('moderate') || s.includes('5') || s.includes('6')) return 5;
+  return 3;
+}
+
+// Helper function to estimate impact from severity text
+function estimateImpact(severity) {
+  const s = severity.toLowerCase();
+  if (s.includes('critical') || s.includes('high') || s.includes('9') || s.includes('10')) return 9;
+  if (s.includes('major') || s.includes('medium') || s.includes('7') || s.includes('8')) return 7;
+  if (s.includes('moderate') || s.includes('5') || s.includes('6')) return 5;
+  return 3;
+}
+
 function extractListItems(text) {
   return text
     .split('\n')
     .filter(line => line.trim().match(/^\d+\./))
     .map(line => line.replace(/^\d+\.\s*/, '').trim());
 }
+
+function parseResourceDependencies(report) {
+  console.log('Parsing resource dependencies from report...');
+
+  try {
+    // Look for RESOURCE_DEPENDENCIES: section with more flexible matching
+    const sectionMatch = report.match(/RESOURCE_DEPENDENCIES:\s*([\s\S]*?)(?=\n\s*##|$)/);
+
+    if (sectionMatch) {
+      const sectionText = sectionMatch[1].trim();
+      console.log('Found RESOURCE_DEPENDENCIES section, parsing JSON...');
+      console.log('Section text (first 300 chars):', sectionText.substring(0, 300));
+
+      // Try to find JSON array in the section - use greedy matching to get complete array
+      const jsonMatch = sectionText.match(/\[([\s\S]*)\]/);
+
+      if (jsonMatch) {
+        let jsonStr = '[' + jsonMatch[1] + ']';
+        console.log('Raw JSON string (first 300 chars):', jsonStr.substring(0, 300));
+
+        // Clean up the JSON string more carefully
+        // First normalize whitespace but preserve structure
+        jsonStr = jsonStr.replace(/\s+/g, ' ').trim();
+        
+        console.log('Cleaned JSON string (first 300 chars):', jsonStr.substring(0, 300));
+
+        try {
+          const resources = JSON.parse(jsonStr);
+
+          // Validate structure
+          if (Array.isArray(resources)) {
+            const validResources = resources.filter(r =>
+              r.id && r.name && r.type && Array.isArray(r.dependencies)
+            );
+
+            console.log(`✅ Parsed ${validResources.length} valid resources:`, JSON.stringify(validResources, null, 2));
+            return validResources;
+          } else {
+            console.error('❌ Parsed data is not an array:', resources);
+          }
+        } catch (jsonError) {
+          console.error('❌ Failed to parse resource dependencies JSON:', jsonError.message);
+          console.error('JSON string that failed:', jsonStr);
+        }
+      } else {
+        console.log('⚠️ No JSON array found in RESOURCE_DEPENDENCIES section');
+        console.log('Section text:', sectionText);
+      }
+    } else {
+      console.log('⚠️ No RESOURCE_DEPENDENCIES section found in report');
+    }
+  } catch (error) {
+    console.error('❌ Error parsing resource dependencies:', error);
+  }
+
+  // Return empty array if parsing fails
+  return [];
+}
+
 
 async function saveReport(report) {
   const ttl = Math.floor(Date.now() / 1000) + (90 * 24 * 60 * 60); // 90 days from now
@@ -660,11 +847,27 @@ Low Priority:
 1. [Minor optimizations]
 2. [Future considerations]
 
+## 8. RESOURCE DEPENDENCIES
+
+CRITICAL: You MUST provide resource dependencies in the EXACT format below. This is required for visualization.
+
+RESOURCE_DEPENDENCIES:
+[{"id":"resource-1","name":"Primary RDS Database","type":"rds","dependencies":[]},{"id":"resource-2","name":"Application Load Balancer","type":"alb","dependencies":["resource-3"]},{"id":"resource-3","name":"EC2 Auto Scaling Group","type":"ec2","dependencies":["resource-1","resource-4"]},{"id":"resource-4","name":"ElastiCache Redis","type":"elasticache","dependencies":[]}]
+
+RULES for RESOURCE_DEPENDENCIES:
+- MUST be valid JSON array on a SINGLE LINE (no line breaks inside the JSON)
+- Each resource MUST have: id, name, type, dependencies
+- Common types: s3, cloudfront, lambda, dynamodb, rds, ec2, elb, alb, vpc, subnet, sg, iam, route53, api_gateway, sns, sqs, elasticache, acm
+- Dependencies array contains IDs of resources this resource depends on
+- Include ALL major infrastructure components mentioned
+- Show actual dependency flow (e.g., CloudFront depends on S3, Route53 depends on CloudFront)
+
 IMPORTANT: Follow the exact format above, especially for:
 - Severity must reflect ACTUAL configuration quality (don't always say critical!)
 - Risk probability/impact scores must be REALISTIC based on protections in place
 - Affected systems should only include what would ACTUALLY be impacted
 - Timeline should be proportional to severity and recovery capabilities
+- Resource dependencies must be valid JSON with proper structure
 
 EVALUATION CRITERIA:
 ✅ GOOD indicators (lower severity): Multi-AZ, encryption, secrets management, monitoring, auto-scaling, read replicas, proper backups, deletion protection, private subnets, least-privilege security groups

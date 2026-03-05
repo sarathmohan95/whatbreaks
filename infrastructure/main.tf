@@ -156,13 +156,29 @@ resource "aws_iam_role_policy" "lambda_policy" {
       {
         Effect = "Allow"
         Action = [
-          "bedrock:InvokeModel"
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream"
         ]
         Resource = [
           "arn:aws:bedrock:*::foundation-model/*",
           "arn:aws:bedrock:*:*:inference-profile/*"
         ]
       },
+      # Bedrock Agents permissions disabled - using single-agent only
+      # {
+      #   Effect = "Allow"
+      #   Action = [
+      #     "bedrock:InvokeAgent",
+      #     "bedrock:GetAgent",
+      #     "bedrock:GetAgentAlias",
+      #     "bedrock:Retrieve",
+      #     "bedrock:RetrieveAndGenerate"
+      #   ]
+      #   Resource = [
+      #     "arn:aws:bedrock:*:*:agent/*",
+      #     "arn:aws:bedrock:*:*:agent-alias/*/*"
+      #   ]
+      # },
       {
         Effect = "Allow"
         Action = [
@@ -219,15 +235,18 @@ resource "aws_lambda_function" "premortem" {
   handler         = "index.handler"
   source_code_hash = filebase64sha256("${path.module}/../backend/premortem-lambda.zip")
   runtime         = "nodejs20.x"
-  timeout          = 90
-  memory_size     = 512
+  timeout          = 90  # 90 seconds for single-agent analysis
+  memory_size     = 1024  # 1GB is sufficient for single-agent
   
   environment {
     variables = {
-      DYNAMODB_TABLE    = aws_dynamodb_table.analyses.name
-      TEMPLATES_TABLE   = aws_dynamodb_table.templates.name
-      S3_BUCKET         = aws_s3_bucket.reports.id
-      ENABLE_SAVE       = "true"
+      DYNAMODB_TABLE           = aws_dynamodb_table.analyses.name
+      TEMPLATES_TABLE          = aws_dynamodb_table.templates.name
+      S3_BUCKET                = aws_s3_bucket.reports.id
+      ENABLE_SAVE              = "true"
+      # Bedrock Agents disabled - using single-agent Claude 3.5 Sonnet
+      # SUPERVISOR_AGENT_ID      = aws_bedrockagent_agent.supervisor.agent_id
+      # SUPERVISOR_AGENT_ALIAS_ID = aws_bedrockagent_agent_alias.supervisor_alias.agent_alias_id
     }
   }
   
@@ -237,6 +256,12 @@ resource "aws_lambda_function" "premortem" {
       Name = "${var.project_name}-premortem"
     }
   )
+  
+  # Bedrock Agents dependencies removed
+  # depends_on = [
+  #   aws_bedrockagent_agent.supervisor,
+  #   aws_bedrockagent_agent_alias.supervisor_alias
+  # ]
 }
 
 # API Gateway

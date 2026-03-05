@@ -32,7 +32,7 @@ export function generatePDFReport(analysis: AnalysisResult): jsPDF {
   doc.setFontSize(32);
   const scoreColor = analysis.score.overall >= 80 ? [34, 197, 94] : 
                      analysis.score.overall >= 60 ? [234, 179, 8] : [239, 68, 68];
-  doc.setTextColor(...scoreColor);
+  doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
   doc.text(`${analysis.score.overall}/100`, pageWidth / 2, yPos, { align: 'center' });
   
   yPos += 15;

@@ -9,6 +9,7 @@ import { ArrowLeft, Download, AlertTriangle, Clock, TrendingDown, Shield, Zap, C
 import { getReport } from '@/lib/api/reports';
 import RiskMatrix from '@/components/RiskMatrix';
 import RiskCard from '@/components/RiskCard';
+import ResourceDependencyGraph from '@/components/ResourceDependencyGraph';
 
 interface Risk {
   id: string;
@@ -19,6 +20,13 @@ interface Risk {
   riskScore: number;
   category: string;
   mitigation: string;
+}
+
+interface Resource {
+  id: string;
+  name: string;
+  type: string;
+  dependencies?: string[];
 }
 
 interface ParsedReport {
@@ -48,10 +56,13 @@ interface ParsedReport {
   risks?: Risk[];
   overallRiskScore?: number;
   riskLevel?: string;
+  resourceDependencies?: Resource[];
   rawReport: string;
 }
 
 export default function PreMortemPage() {
+  console.log('🚀 PreMortemPage component loaded - with resource dependencies feature');
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const reportId = searchParams.get('id');
@@ -62,7 +73,7 @@ export default function PreMortemPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'risks' | 'timeline' | 'actions' | 'report'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'risks' | 'timeline' | 'actions' | 'dependencies' | 'report'>('overview');
 
   useEffect(() => {
     const loadReport = async () => {
@@ -83,11 +94,25 @@ export default function PreMortemPage() {
           });
           // Use the parsedReport from the saved report if available
           if (savedReport.parsedReport) {
-            setParsedReport({
+            console.log('📦 Using saved parsedReport, checking for resourceDependencies...');
+            console.log('Saved resourceDependencies:', (savedReport.parsedReport as any).resourceDependencies);
+            
+            // Always try to parse from fullReport if dependencies are missing or empty
+            const savedDeps = (savedReport.parsedReport as any).resourceDependencies;
+            const needsParsing = !savedDeps || savedDeps.length === 0;
+            
+            console.log('Needs parsing?', needsParsing);
+            console.log('Full report length:', savedReport.fullReport?.length || 0);
+            
+            const parsed: ParsedReport = {
               ...savedReport.parsedReport,
-              rawReport: savedReport.fullReport
-            });
+              rawReport: savedReport.fullReport,
+              resourceDependencies: needsParsing ? parseResourceDependencies(savedReport.fullReport) : savedDeps
+            };
+            console.log('✅ Final parsed report with dependencies:', parsed.resourceDependencies?.length || 0, parsed.resourceDependencies);
+            setParsedReport(parsed);
           } else {
+            console.log('📝 No saved parsedReport, parsing from fullReport...');
             setParsedReport(parseReport(savedReport.fullReport));
           }
         } else {
@@ -98,10 +123,12 @@ export default function PreMortemPage() {
             setAnalysis(data);
             // Use the parsedReport from the API response if available, otherwise parse the fullReport
             if (data.parsedReport) {
-              setParsedReport({
+              const parsed: ParsedReport = {
                 ...data.parsedReport,
-                rawReport: data.fullReport
-              });
+                rawReport: data.fullReport,
+                resourceDependencies: (data.parsedReport as any).resourceDependencies || parseResourceDependencies(data.fullReport)
+              };
+              setParsedReport(parsed);
             } else {
               setParsedReport(parseReport(data.fullReport));
             }
@@ -160,6 +187,9 @@ export default function PreMortemPage() {
       low: lowPriority ? extractListItems(lowPriority[1]) : []
     };
 
+    // Parse resource dependencies
+    parsed.resourceDependencies = parseResourceDependencies(report);
+
     return parsed;
   };
 
@@ -168,6 +198,62 @@ export default function PreMortemPage() {
       .split('\n')
       .filter(line => line.trim().match(/^\d+\./))
       .map(line => line.replace(/^\d+\.\s*/, '').trim());
+  };
+
+  const parseResourceDependencies = (report: string): Resource[] => {
+    console.log('🔍 Frontend: Parsing resource dependencies from report...');
+    console.log('📄 Report length:', report.length);
+    
+    try {
+      // Look for RESOURCE_DEPENDENCIES: section with more flexible matching
+      // Match everything between RESOURCE_DEPENDENCIES: and the next ## or end of string
+      const sectionMatch = report.match(/RESOURCE_DEPENDENCIES:\s*([\s\S]*?)(?=\n\s*##|$)/);
+      
+      console.log('🔎 Section match result:', sectionMatch ? 'FOUND' : 'NOT FOUND');
+      
+      if (sectionMatch) {
+        const sectionText = sectionMatch[1].trim();
+        console.log('📋 Section text (first 300 chars):', sectionText.substring(0, 300));
+        
+        // Find the JSON array - use greedy matching to get the complete array
+        // Start from [ and match everything until the last ]
+        const jsonMatch = sectionText.match(/\[([\s\S]*)\]/);
+        
+        if (jsonMatch) {
+          let jsonStr = '[' + jsonMatch[1] + ']';
+          console.log('📋 Found JSON array (first 300 chars):', jsonStr.substring(0, 300));
+          
+          // Clean up the JSON string - normalize whitespace but preserve structure
+          jsonStr = jsonStr.replace(/\s+/g, ' ').trim();
+          console.log('🧹 Cleaned JSON string (first 300 chars):', jsonStr.substring(0, 300));
+          
+          const resources = JSON.parse(jsonStr);
+          console.log('✅ Parsed JSON successfully:', resources);
+          
+          // Validate structure
+          if (Array.isArray(resources)) {
+            const validResources = resources.filter((r: any) => 
+              r.id && r.name && r.type && Array.isArray(r.dependencies)
+            );
+            
+            console.log(`✅ Found ${validResources.length} valid resources:`, validResources);
+            return validResources;
+          } else {
+            console.error('❌ Parsed data is not an array:', resources);
+          }
+        } else {
+          console.log('⚠️ No JSON array found in RESOURCE_DEPENDENCIES section');
+          console.log('Section text:', sectionText);
+        }
+      } else {
+        console.log('⚠️ RESOURCE_DEPENDENCIES section not found in report');
+      }
+    } catch (error) {
+      console.error('❌ Error parsing resource dependencies in frontend:', error);
+    }
+    
+    console.log('⚠️ Returning empty array - no dependencies found');
+    return [];
   };
 
   const getSeverityColor = (severity?: string) => {
@@ -351,6 +437,18 @@ export default function PreMortemPage() {
           >
             Preventive Actions
           </button>
+          {parsedReport.resourceDependencies && parsedReport.resourceDependencies.length > 0 && (
+            <button
+              onClick={() => setActiveTab('dependencies')}
+              className={`px-4 py-3 font-medium transition-colors ${
+                activeTab === 'dependencies'
+                  ? 'text-white border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Dependencies
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('report')}
             className={`px-4 py-3 font-medium transition-colors ${
@@ -530,6 +628,23 @@ export default function PreMortemPage() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTab === 'dependencies' && parsedReport.resourceDependencies && parsedReport.resourceDependencies.length > 0 && (
+          <Card className="bg-white/5 backdrop-blur-sm border-white/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-400" />
+                Resource Dependencies
+              </CardTitle>
+              <p className="text-sm text-gray-400 mt-2">
+                Interactive visualization showing how infrastructure resources are connected and depend on each other
+              </p>
+            </CardHeader>
+            <CardContent>
+              <ResourceDependencyGraph resources={parsedReport.resourceDependencies} />
             </CardContent>
           </Card>
         )}

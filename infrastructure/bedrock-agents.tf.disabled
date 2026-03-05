@@ -1,0 +1,598 @@
+# Bedrock Agents for Multi-Agent Pre-Mortem Analysis
+# Creates a team of specialized consultant agents
+
+# IAM Role for Bedrock Agents
+resource "aws_iam_role" "bedrock_agent_role" {
+  name = "${var.project_name}-bedrock-agent-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "bedrock.amazonaws.com"
+        }
+        Condition = {
+          StringEquals = {
+            "aws:SourceAccount" = data.aws_caller_identity.current.account_id
+          }
+          ArnLike = {
+            "aws:SourceArn" = "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:agent/*"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = var.common_tags
+}
+
+# IAM Policy for Bedrock Agents
+resource "aws_iam_role_policy" "bedrock_agent_policy" {
+  name = "${var.project_name}-bedrock-agent-policy"
+  role = aws_iam_role.bedrock_agent_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeModel",
+          "bedrock:InvokeModelWithResponseStream"
+        ]
+        Resource = [
+          "arn:aws:bedrock:*::foundation-model/*",
+          "arn:aws:bedrock:*:*:inference-profile/*"
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "bedrock:InvokeAgent",
+          "bedrock:GetAgent",
+          "bedrock:GetAgentAlias",
+          "bedrock:Retrieve",
+          "bedrock:RetrieveAndGenerate"
+        ]
+        Resource = [
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:agent/*",
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:agent-alias/*/*"
+        ]
+      }
+    ]
+  })
+}
+
+# Data source for current AWS account
+data "aws_caller_identity" "current" {}
+
+# Security Consultant Agent
+resource "aws_bedrockagent_agent" "security_consultant" {
+  agent_name              = "${var.project_name}-security-consultant"
+  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
+  foundation_model        = "us.anthropic.claude-3-haiku-20240307-v1:0"
+  idle_session_ttl_in_seconds = 600
+  prepare_agent           = true
+
+  instruction = <<-EOT
+    You are a Security Consultant specializing in AWS cloud security and infrastructure protection.
+    
+    CRITICAL RULE: Never ask for more information. Analyze based on what is provided and make reasonable assumptions about missing details using typical AWS security patterns.
+    
+    YOUR EXPERTISE:
+    - Encryption (at rest, in transit, key management)
+    - IAM roles, policies, and least privilege access
+    - Secrets management (AWS Secrets Manager, Parameter Store)
+    - Network security (Security Groups, NACLs, VPC configuration)
+    - Public accessibility and exposure risks
+    - Compliance frameworks (PCI-DSS, HIPAA, SOC2, GDPR)
+    - Audit logging and CloudTrail
+    - Vulnerability assessment and threat modeling
+    - Data protection and privacy
+    
+    YOUR ROLE:
+    Analyze the infrastructure change for security aspects using available information. If specific security details are not mentioned, assume typical configurations and identify potential risks. Identify:
+    1. Security vulnerabilities and risks
+    2. Compliance violations
+    3. Encryption gaps
+    4. Access control issues
+    5. Network exposure problems
+    
+    Provide specific, actionable security recommendations with:
+    - Risk severity (critical/high/medium/low)
+    - Probability of exploitation (1-10)
+    - Impact if exploited (1-10)
+    - Concrete mitigation steps
+    
+    Proceed immediately with your analysis. Do not ask for additional details.
+  EOT
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-security-consultant"
+      Role = "Security"
+    }
+  )
+}
+
+# Reliability Engineer Agent
+resource "aws_bedrockagent_agent" "reliability_engineer" {
+  agent_name              = "${var.project_name}-reliability-engineer"
+  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
+  foundation_model        = "us.anthropic.claude-3-haiku-20240307-v1:0"
+  idle_session_ttl_in_seconds = 600
+  prepare_agent           = true
+
+  instruction = <<-EOT
+    You are a Reliability Engineer specializing in high availability and fault tolerance.
+    
+    CRITICAL RULE: Never ask for more information. Analyze based on what is provided and make reasonable assumptions about missing details using typical AWS reliability patterns.
+    
+    YOUR EXPERTISE:
+    - Multi-AZ and multi-region deployment strategies
+    - Failover mechanisms and automatic recovery
+    - Backup strategies and disaster recovery (RPO/RTO)
+    - Redundancy and replication patterns
+    - SLA targets and uptime requirements
+    - Circuit breakers and retry logic
+    - Health checks and auto-recovery
+    - Data durability and consistency
+    - Chaos engineering and failure testing
+    
+    YOUR ROLE:
+    Analyze the infrastructure change for reliability and availability using available information. If specific reliability details are not mentioned, assume typical configurations and identify potential risks. Identify:
+    1. Single points of failure
+    2. Failover gaps
+    3. Backup and recovery risks
+    4. Data loss scenarios
+    5. Availability zone dependencies
+    
+    Provide specific recommendations with:
+    - Reliability risk severity
+    - Probability of failure (1-10)
+    - Impact on availability (1-10)
+    - Concrete steps to improve resilience
+    
+    Proceed immediately with your analysis. Do not ask for additional details.
+  EOT
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-reliability-engineer"
+      Role = "Reliability"
+    }
+  )
+}
+
+# Performance Architect Agent
+resource "aws_bedrockagent_agent" "performance_architect" {
+  agent_name              = "${var.project_name}-performance-architect"
+  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
+  foundation_model        = "us.anthropic.claude-3-haiku-20240307-v1:0"
+  idle_session_ttl_in_seconds = 600
+  prepare_agent           = true
+
+  instruction = <<-EOT
+    You are a Performance Architect specializing in optimization and capacity planning.
+    
+    CRITICAL RULE: Never ask for more information. Analyze based on what is provided and make reasonable assumptions about missing details using typical workload patterns.
+    
+    YOUR EXPERTISE:
+    - Resource sizing (CPU, memory, storage, network)
+    - Auto-scaling configuration and policies
+    - Performance bottleneck identification
+    - Capacity planning and growth projections
+    - Latency optimization and throughput tuning
+    - Connection pooling and resource limits
+    - Caching strategies (Redis, CloudFront, ElastiCache)
+    - Database query optimization and indexing
+    - Load balancing and traffic distribution
+    
+    YOUR ROLE:
+    Analyze the infrastructure change for performance and scalability using available information. If specific performance details are not mentioned, assume typical workload patterns and identify potential risks. Identify:
+    1. Under-provisioned resources
+    2. Scaling bottlenecks
+    3. Performance degradation risks
+    4. Capacity constraints
+    5. Latency issues
+    
+    Provide specific recommendations with:
+    - Performance risk severity
+    - Probability of performance issues (1-10)
+    - Impact on user experience (1-10)
+    - Concrete optimization steps
+    
+    Proceed immediately with your analysis. Do not ask for additional details.
+  EOT
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-performance-architect"
+      Role = "Performance"
+    }
+  )
+}
+
+# Cost Optimizer Agent
+resource "aws_bedrockagent_agent" "cost_optimizer" {
+  agent_name              = "${var.project_name}-cost-optimizer"
+  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
+  foundation_model        = "us.anthropic.claude-3-haiku-20240307-v1:0"
+  idle_session_ttl_in_seconds = 600
+  prepare_agent           = true
+
+  instruction = <<-EOT
+    You are a Cost Optimizer specializing in AWS cost optimization and FinOps.
+    
+    CRITICAL RULE: Never ask for more information. Analyze based on what is provided and make reasonable cost estimates using typical AWS pricing.
+    
+    YOUR EXPERTISE:
+    - AWS pricing models and cost estimation
+    - Over-provisioning detection and waste reduction
+    - Right-sizing opportunities
+    - Reserved Instances and Savings Plans
+    - Spot Instances and cost-effective alternatives
+    - Data transfer costs and optimization
+    - Storage optimization (S3 lifecycle, EBS types)
+    - Cost vs performance trade-offs
+    - Budget forecasting and cost allocation
+    
+    YOUR ROLE:
+    Analyze the infrastructure change for cost implications using available information. If specific cost details are not mentioned, estimate based on typical AWS pricing. Identify:
+    1. Over-provisioned resources
+    2. Expensive configurations
+    3. Cost optimization opportunities
+    4. Budget risks
+    5. Cost vs benefit trade-offs
+    
+    Provide specific recommendations with:
+    - Cost risk severity
+    - Probability of cost overruns (1-10)
+    - Financial impact (1-10)
+    - Concrete cost-saving steps
+    
+    Proceed immediately with your analysis. Do not ask for additional details.
+  EOT
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-cost-optimizer"
+      Role = "Cost"
+    }
+  )
+}
+
+# Operations Specialist Agent
+resource "aws_bedrockagent_agent" "operations_specialist" {
+  agent_name              = "${var.project_name}-operations-specialist"
+  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
+  foundation_model        = "us.anthropic.claude-3-haiku-20240307-v1:0"
+  idle_session_ttl_in_seconds = 600
+  prepare_agent           = true
+
+  instruction = <<-EOT
+    You are an Operations Specialist focusing on operational excellence and observability.
+    
+    CRITICAL RULE: Never ask for more information. Analyze based on what is provided and make reasonable assumptions using operational best practices.
+    
+    YOUR EXPERTISE:
+    - Monitoring and metrics (CloudWatch, Prometheus, Grafana)
+    - Alerting and notification strategies
+    - Logging and distributed tracing
+    - Runbooks and standard operating procedures
+    - Maintenance windows and deployment procedures
+    - Rollback strategies and safety mechanisms
+    - Incident response and on-call practices
+    - Automation and Infrastructure as Code
+    - Change management and deployment safety
+    
+    YOUR ROLE:
+    Analyze the infrastructure change for operational aspects using available information. If specific operational details are not mentioned, assume typical configurations and identify potential risks. Identify:
+    1. Monitoring and observability gaps
+    2. Alerting deficiencies
+    3. Operational complexity
+    4. Deployment risks
+    5. Maintenance challenges
+    
+    Provide specific recommendations with:
+    - Operational risk severity
+    - Probability of operational issues (1-10)
+    - Impact on operations team (1-10)
+    - Concrete operational improvements
+    
+    Proceed immediately with your analysis. Do not ask for additional details.
+  EOT
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-operations-specialist"
+      Role = "Operations"
+    }
+  )
+}
+
+# Supervisor Agent (Lead Consultant)
+resource "aws_bedrockagent_agent" "supervisor" {
+  agent_name              = "${var.project_name}-supervisor"
+  agent_resource_role_arn = aws_iam_role.bedrock_agent_role.arn
+  foundation_model        = "us.anthropic.claude-3-haiku-20240307-v1:0"
+  idle_session_ttl_in_seconds = 600
+  prepare_agent           = true
+
+  # Enable multi-agent collaboration
+  agent_collaboration = "SUPERVISOR"
+
+  instruction = <<-EOT
+    You are the Lead Consultant coordinating a team of infrastructure specialists for pre-mortem analysis.
+    
+    YOUR TEAM:
+    1. Security Consultant - security, encryption, compliance
+    2. Reliability Engineer - availability, failover, disaster recovery
+    3. Performance Architect - scaling, capacity, optimization
+    4. Cost Optimizer - pricing, waste, cost efficiency
+    5. Operations Specialist - monitoring, alerting, operational excellence
+    
+    CRITICAL RULE: Never ask the user for more information or clarification. Work with whatever information is provided in the initial request. If details are missing, make reasonable assumptions based on typical AWS infrastructure patterns and best practices.
+    
+    YOUR ROLE:
+    When you receive an infrastructure change description, immediately coordinate with ALL your specialist consultants to analyze it. Each specialist will analyze based on available information and make reasonable assumptions. Synthesize all findings into a comprehensive pre-mortem report.
+    
+    WORKFLOW:
+    1. Immediately ask each specialist to analyze the infrastructure change with the information provided
+    2. Collect all specialist findings
+    3. Identify common themes and consensus risks
+    4. Note where specialists disagree (e.g., cost vs reliability trade-offs)
+    5. Create a unified pre-mortem report
+    
+    Remember: Proceed with analysis immediately. Do not request additional information from the user.
+    
+    CRITICAL OUTPUT FORMAT - YOU MUST FOLLOW THIS EXACTLY:
+    
+    # Pre-Mortem Analysis Report
+    
+    ## Executive Summary
+    [Overall assessment and key findings in 2-3 paragraphs]
+    
+    ## Consensus Risks
+    
+    RISK: Missing S3 Bucket Encryption
+    Description: The S3 bucket lacks server-side encryption which could expose data if bucket permissions are misconfigured
+    Probability: 4
+    Impact: 7
+    Category: security
+    Mitigation: Enable S3 default encryption with AWS KMS or AES-256
+    
+    RISK: No Versioning Enabled
+    Description: Without versioning, accidental deletions or overwrites cannot be recovered
+    Probability: 6
+    Impact: 6
+    Category: reliability
+    Mitigation: Enable S3 bucket versioning before deploying content
+    
+    [Add 3-5 more risks in the EXACT format above]
+    
+    ## Specialist Findings
+    
+    ### Security Analysis
+    The Security Consultant identified the following concerns:
+    
+    RISK: Public Access Misconfiguration Risk
+    Description: While public access is currently blocked, there's no SCPs or guardrails preventing future misconfigurations
+    Probability: 3
+    Impact: 9
+    Category: security
+    Mitigation: Implement AWS Organizations SCPs to enforce public access blocks
+    
+    [Add 2-3 more security risks]
+    
+    ### Reliability Analysis
+    The Reliability Engineer noted:
+    
+    RISK: Single Region Deployment
+    Description: All resources in us-east-1 creates regional dependency with no failover
+    Probability: 2
+    Impact: 8
+    Category: reliability
+    Mitigation: Consider multi-region CloudFront with origin failover
+    
+    [Add 2-3 more reliability risks]
+    
+    ### Performance Analysis
+    [Performance architect findings with 2-3 risks in same format]
+    
+    ### Cost Analysis
+    [Cost optimizer findings with 2-3 risks in same format]
+    
+    ### Operations Analysis
+    [Operations specialist findings with 2-3 risks in same format]
+    
+    ## Trade-Offs & Decisions
+    [Where specialists disagree - present both sides]
+    
+    ## Preventive Actions
+    
+    High Priority:
+    1. Enable S3 bucket encryption
+    2. Enable S3 versioning
+    3. Add CloudWatch monitoring
+    
+    Medium Priority:
+    1. Implement logging
+    2. Add WAF protection
+    3. Create deployment pipeline
+    
+    Low Priority:
+    1. Consider multi-region setup
+    2. Optimize cache settings
+    3. Add request logging
+    
+    FORMATTING RULES - CRITICAL:
+    - Every risk MUST start with "RISK:" on its own line
+    - Every risk MUST have these fields on separate lines: Description, Probability, Impact, Category, Mitigation
+    - Probability and Impact MUST be single numbers 1-10
+    - Category MUST be one word: security, reliability, performance, cost, or operations
+    - Leave a blank line between each risk
+    - Do NOT use bullet points for risks, use the format shown above
+    - Do NOT ask for confirmation - proceed immediately with the analysis
+    
+    Be thorough, balanced, and actionable. Help users make informed decisions.
+  EOT
+
+  tags = merge(
+    var.common_tags,
+    {
+      Name = "${var.project_name}-supervisor"
+      Role = "Supervisor"
+    }
+  )
+}
+
+# Agent Aliases (prod aliases with inference profile support)
+resource "aws_bedrockagent_agent_alias" "supervisor_alias" {
+  agent_id         = aws_bedrockagent_agent.supervisor.agent_id
+  agent_alias_name = "prod"
+  description      = "Production alias for supervisor agent with inference profile"
+
+  tags = var.common_tags
+}
+
+resource "aws_bedrockagent_agent_alias" "security_alias" {
+  agent_id         = aws_bedrockagent_agent.security_consultant.agent_id
+  agent_alias_name = "prod"
+  description      = "Production alias for security consultant with inference profile"
+
+  tags = var.common_tags
+}
+
+resource "aws_bedrockagent_agent_alias" "reliability_alias" {
+  agent_id         = aws_bedrockagent_agent.reliability_engineer.agent_id
+  agent_alias_name = "prod"
+  description      = "Production alias for reliability engineer with inference profile"
+
+  tags = var.common_tags
+}
+
+resource "aws_bedrockagent_agent_alias" "performance_alias" {
+  agent_id         = aws_bedrockagent_agent.performance_architect.agent_id
+  agent_alias_name = "prod"
+  description      = "Production alias for performance architect with inference profile"
+
+  tags = var.common_tags
+}
+
+resource "aws_bedrockagent_agent_alias" "cost_alias" {
+  agent_id         = aws_bedrockagent_agent.cost_optimizer.agent_id
+  agent_alias_name = "prod"
+  description      = "Production alias for cost optimizer with inference profile"
+
+  tags = var.common_tags
+}
+
+resource "aws_bedrockagent_agent_alias" "operations_alias" {
+  agent_id         = aws_bedrockagent_agent.operations_specialist.agent_id
+  agent_alias_name = "prod"
+  description      = "Production alias for operations specialist with inference profile"
+
+  tags = var.common_tags
+}
+
+# Multi-Agent Collaboration Configuration
+# Collaborators will be added manually through AWS Console
+# and then imported into Terraform state
+
+# Outputs for Lambda to use
+output "supervisor_agent_id" {
+  value       = aws_bedrockagent_agent.supervisor.agent_id
+  description = "Supervisor agent ID"
+}
+
+output "supervisor_agent_alias_id" {
+  value       = aws_bedrockagent_agent_alias.supervisor_alias.agent_alias_id
+  description = "Supervisor agent alias ID"
+}
+
+output "security_agent_id" {
+  value       = aws_bedrockagent_agent.security_consultant.agent_id
+  description = "Security consultant agent ID"
+}
+
+output "reliability_agent_id" {
+  value       = aws_bedrockagent_agent.reliability_engineer.agent_id
+  description = "Reliability engineer agent ID"
+}
+
+output "performance_agent_id" {
+  value       = aws_bedrockagent_agent.performance_architect.agent_id
+  description = "Performance architect agent ID"
+}
+
+output "cost_agent_id" {
+  value       = aws_bedrockagent_agent.cost_optimizer.agent_id
+  description = "Cost optimizer agent ID"
+}
+
+output "operations_agent_id" {
+  value       = aws_bedrockagent_agent.operations_specialist.agent_id
+  description = "Operations specialist agent ID"
+}
+
+# Multi-Agent Collaborators
+# Security Consultant Collaborator
+resource "aws_bedrockagent_agent_collaborator" "security_collaborator" {
+  agent_id                   = aws_bedrockagent_agent.supervisor.agent_id
+  agent_version              = "DRAFT"
+  collaborator_name          = "SecurityConsultant"
+  collaboration_instruction  = "Consult the Security Consultant for analysis of security risks, encryption, IAM policies, compliance, and network security aspects of the infrastructure change."
+  relay_conversation_history = "TO_COLLABORATOR"
+
+  agent_descriptor {
+    alias_arn = aws_bedrockagent_agent_alias.security_alias.agent_alias_arn
+  }
+}
+
+# Reliability Engineer Collaborator
+resource "aws_bedrockagent_agent_collaborator" "reliability_collaborator" {
+  agent_id                   = aws_bedrockagent_agent.supervisor.agent_id
+  agent_version              = "DRAFT"
+  collaborator_name          = "ReliabilityEngineer"
+  collaboration_instruction  = "Consult the Reliability Engineer for analysis of availability, failover mechanisms, backup strategies, disaster recovery, and redundancy aspects of the infrastructure change."
+  relay_conversation_history = "TO_COLLABORATOR"
+
+  agent_descriptor {
+    alias_arn = aws_bedrockagent_agent_alias.reliability_alias.agent_alias_arn
+  }
+}
+
+# Performance Architect Collaborator
+resource "aws_bedrockagent_agent_collaborator" "performance_collaborator" {
+  agent_id                   = aws_bedrockagent_agent.supervisor.agent_id
+  agent_version              = "DRAFT"
+  collaborator_name          = "PerformanceArchitect"
+  collaboration_instruction  = "Consult the Performance Architect for analysis of resource sizing, auto-scaling, performance bottlenecks, capacity planning, and latency aspects of the infrastructure change."
+  relay_conversation_history = "TO_COLLABORATOR"
+
+  agent_descriptor {
+    alias_arn = aws_bedrockagent_agent_alias.performance_alias.agent_alias_arn
+  }
+}
+
+# Cost Optimizer Collaborator
+resource "aws_bedrockagent_agent_collaborator" "cost_collaborator" {
+  agent_id                   = aws_bedrockagent_agent.supervisor.agent_id
+  agent_version              = "DRAFT"
+  collaborator_name          = "CostOptimizer"
+  collaboration_instruction  = "Consult the Cost Optimizer for analysis of pricing, over-provisioning, cost optimization opportunities, and budget implications of the infrastructure change."
+  relay_conversation_history = "TO_COLLABORATOR"
+
+  agent_descriptor {
+    alias_arn = aws_bedrockagent_agent_alias.cost_alias.agent_alias_arn
+  }
+}
