@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -10,30 +10,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   MarkerType,
-  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-
-// Import AWS icons
-import {
-  ArchitectureServiceAmazonS3,
-  ArchitectureServiceAmazonCloudFront,
-  ArchitectureServiceAWSLambda,
-  ArchitectureServiceAmazonDynamoDB,
-  ArchitectureServiceAmazonRDS,
-  ArchitectureServiceAmazonEC2,
-  ArchitectureServiceElasticLoadBalancing,
-  ArchitectureServiceAmazonVPC,
-  SecurityIdentityComplianceAWSIdentityAccessManagement,
-  NetworkingContentDeliveryAmazonRoute53,
-  ArchitectureServiceAmazonAPIGateway,
-  ApplicationIntegrationAmazonSimpleNotificationService,
-  ApplicationIntegrationAmazonSimpleQueueService,
-  SecurityIdentityComplianceAWSCertificateManager,
-  SecurityIdentityComplianceAWSKeyManagementService,
-  ArchitectureServiceAmazonElastiCache,
-  ManagementGovernanceAmazonCloudWatch,
-} from 'aws-react-icons';
 
 interface Resource {
   id: string;
@@ -46,76 +24,97 @@ interface ResourceDependencyGraphProps {
   resources?: Resource[];
 }
 
-// Resource type to AWS icon component mapping
-const getResourceIcon = (type: string) => {
-  if (!type) return null;
+const getResourceIconUrl = (type: string): string => {
+  const iconMap: Record<string, string> = {
+    's3': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonSimpleStorageService.svg',
+    'cloudfront': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonCloudFront.svg',
+    'lambda': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AWSLambda.svg',
+    'dynamodb': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonDynamoDB.svg',
+    'rds': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonRDS.svg',
+    'ec2': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonEC2.svg',
+    'elb': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/ElasticLoadBalancing.svg',
+    'alb': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/ElasticLoadBalancing.svg',
+    'nlb': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/ElasticLoadBalancing.svg',
+    'vpc': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonVirtualPrivateCloud.svg',
+    'route53': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonRoute53.svg',
+    'api_gateway': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonAPIGateway.svg',
+    'apigateway': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonAPIGateway.svg',
+    'sns': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonSimpleNotificationService.svg',
+    'sqs': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonSimpleQueueService.svg',
+    'iam': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AWSIdentityandAccessManagement.svg',
+    'kms': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AWSKeyManagementService.svg',
+    'elasticache': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonElastiCache.svg',
+    'redis': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonElastiCache.svg',
+    'cloudwatch': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonCloudWatch.svg',
+    'eks': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonElasticKubernetesService.svg',
+    'ecs': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonElasticContainerService.svg',
+    'asg': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AWSAutoScaling.svg',
+    'autoscaling': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AWSAutoScaling.svg',
+    'sg': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonVirtualPrivateCloud.svg',
+    'acm': 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AWSCertificateManager.svg',
+  };
+
+  if (!type) {
+    return 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonEC2.svg';
+  }
 
   const normalizedType = type.toLowerCase().replace(/[^a-z0-9]/g, '_');
   
-  // Map resource types to AWS icon components
-  if (normalizedType.includes('s3')) return ArchitectureServiceAmazonS3;
-  if (normalizedType.includes('cloudfront')) return ArchitectureServiceAmazonCloudFront;
-  if (normalizedType.includes('lambda')) return ArchitectureServiceAWSLambda;
-  if (normalizedType.includes('dynamodb')) return ArchitectureServiceAmazonDynamoDB;
-  if (normalizedType.includes('rds')) return ArchitectureServiceAmazonRDS;
-  if (normalizedType.includes('ec2')) return ArchitectureServiceAmazonEC2;
-  if (normalizedType.includes('elb') || normalizedType.includes('alb') || normalizedType.includes('nlb')) {
-    return ArchitectureServiceElasticLoadBalancing;
+  for (const [key, url] of Object.entries(iconMap)) {
+    if (normalizedType.includes(key)) {
+      return url;
+    }
   }
-  if (normalizedType.includes('vpc')) return ArchitectureServiceAmazonVPC;
-  if (normalizedType.includes('iam')) return SecurityIdentityComplianceAWSIdentityAccessManagement;
-  if (normalizedType.includes('route53')) return NetworkingContentDeliveryAmazonRoute53;
-  if (normalizedType.includes('api_gateway') || normalizedType.includes('apigateway')) {
-    return ArchitectureServiceAmazonAPIGateway;
-  }
-  if (normalizedType.includes('sns')) return ApplicationIntegrationAmazonSimpleNotificationService;
-  if (normalizedType.includes('sqs')) return ApplicationIntegrationAmazonSimpleQueueService;
-  if (normalizedType.includes('acm')) return SecurityIdentityComplianceAWSCertificateManager;
-  if (normalizedType.includes('kms')) return SecurityIdentityComplianceAWSKeyManagementService;
-  if (normalizedType.includes('elasticache') || normalizedType.includes('redis')) {
-    return ArchitectureServiceAmazonElastiCache;
-  }
-  if (normalizedType.includes('cloudwatch')) return ManagementGovernanceAmazonCloudWatch;
   
-  return null;
+  return 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonEC2.svg';
 };
 
-// Resource type to color mapping (AWS brand colors)
 const getResourceColor = (type: string) => {
-  if (!type) return { color: '#232F3E', bgColor: '#ECEFF1' };
+  const colorMap: Record<string, { color: string; bgColor: string }> = {
+    's3': { color: '#569A31', bgColor: '#E8F5E9' },
+    'cloudfront': { color: '#8C4FFF', bgColor: '#F3E5F5' },
+    'lambda': { color: '#FF9900', bgColor: '#FFF3E0' },
+    'dynamodb': { color: '#3B48CC', bgColor: '#E8EAF6' },
+    'rds': { color: '#3B48CC', bgColor: '#E8EAF6' },
+    'ec2': { color: '#FF9900', bgColor: '#FFF3E0' },
+    'elb': { color: '#8C4FFF', bgColor: '#F3E5F5' },
+    'alb': { color: '#8C4FFF', bgColor: '#F3E5F5' },
+    'nlb': { color: '#8C4FFF', bgColor: '#F3E5F5' },
+    'vpc': { color: '#8C4FFF', bgColor: '#F3E5F5' },
+    'route53': { color: '#8C4FFF', bgColor: '#F3E5F5' },
+    'api_gateway': { color: '#FF4F8B', bgColor: '#FCE4EC' },
+    'sns': { color: '#FF4F8B', bgColor: '#FCE4EC' },
+    'sqs': { color: '#FF4F8B', bgColor: '#FCE4EC' },
+    'iam': { color: '#DD344C', bgColor: '#FFEBEE' },
+    'kms': { color: '#DD344C', bgColor: '#FFEBEE' },
+    'elasticache': { color: '#C925D1', bgColor: '#F3E5F5' },
+    'redis': { color: '#C925D1', bgColor: '#F3E5F5' },
+    'cloudwatch': { color: '#E7157B', bgColor: '#FCE4EC' },
+    'eks': { color: '#FF9900', bgColor: '#FFF3E0' },
+    'ecs': { color: '#FF9900', bgColor: '#FFF3E0' },
+    'asg': { color: '#FF9900', bgColor: '#FFF3E0' },
+    'sg': { color: '#DD344C', bgColor: '#FFEBEE' },
+    'default': { color: '#232F3E', bgColor: '#ECEFF1' },
+  };
+
+  if (!type) {
+    return colorMap.default;
+  }
 
   const normalizedType = type.toLowerCase().replace(/[^a-z0-9]/g, '_');
   
-  // AWS service category colors
-  if (normalizedType.includes('s3') || normalizedType.includes('cloudfront')) {
-    return { color: '#569A31', bgColor: '#E8F5E9' }; // Storage - Green
-  }
-  if (normalizedType.includes('lambda') || normalizedType.includes('ec2')) {
-    return { color: '#FF9900', bgColor: '#FFF3E0' }; // Compute - Orange
-  }
-  if (normalizedType.includes('dynamodb') || normalizedType.includes('rds') || normalizedType.includes('elasticache')) {
-    return { color: '#3B48CC', bgColor: '#E8EAF6' }; // Database - Blue
-  }
-  if (normalizedType.includes('vpc') || normalizedType.includes('elb') || normalizedType.includes('route53')) {
-    return { color: '#8C4FFF', bgColor: '#F3E5F5' }; // Networking - Purple
-  }
-  if (normalizedType.includes('iam') || normalizedType.includes('kms') || normalizedType.includes('acm')) {
-    return { color: '#DD344C', bgColor: '#FFEBEE' }; // Security - Red
-  }
-  if (normalizedType.includes('sns') || normalizedType.includes('sqs') || normalizedType.includes('api_gateway')) {
-    return { color: '#FF4F8B', bgColor: '#FCE4EC' }; // Integration - Pink
-  }
-  if (normalizedType.includes('cloudwatch')) {
-    return { color: '#E7157B', bgColor: '#FCE4EC' }; // Management - Magenta
+  for (const [key, value] of Object.entries(colorMap)) {
+    if (normalizedType.includes(key)) {
+      return value;
+    }
   }
   
-  return { color: '#232F3E', bgColor: '#ECEFF1' }; // Default AWS dark
+  return colorMap.default;
 };
 
 export default function ResourceDependencyGraph({ resources = [] }: ResourceDependencyGraphProps) {
   console.log('🔗 ResourceDependencyGraph rendering with resources:', resources);
   
-  // Convert resources to nodes and edges
   const { nodes: initialNodes, edges: initialEdges } = useMemo(() => {
     if (!resources || resources.length === 0) {
       return { nodes: [], edges: [] };
@@ -123,48 +122,60 @@ export default function ResourceDependencyGraph({ resources = [] }: ResourceDepe
 
     console.log('🔨 Building nodes and edges from resources...');
 
-    // Create nodes
     const nodes: Node[] = resources.map((resource, index) => {
       const row = Math.floor(index / 3);
       const col = index % 3;
-      const style = getResourceStyle(resource.type);
+      const colors = getResourceColor(resource.type);
+      const iconUrl = getResourceIconUrl(resource.type);
       
       return {
         id: resource.id,
         type: 'default',
-        position: { x: col * 250, y: row * 120 },
+        position: { x: col * 280, y: row * 140 },
         data: {
           label: (
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{style.icon}</span>
-              <div>
-                <div className="font-semibold text-sm">{resource.name}</div>
-                <div className="text-xs text-gray-600">{resource.type}</div>
+            <div className="flex items-center gap-3 p-2">
+              <div className="flex-shrink-0">
+                <img 
+                  src={iconUrl} 
+                  alt={resource.type}
+                  style={{ width: 48, height: 48 }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://unpkg.com/aws-icons@latest/icons/architecture-service/AmazonEC2.svg';
+                  }}
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-sm text-gray-900 truncate">
+                  {resource.name}
+                </div>
+                <div className="text-xs text-gray-600 uppercase tracking-wide">
+                  {resource.type}
+                </div>
               </div>
             </div>
           ),
         },
         style: {
-          backgroundColor: style.bgColor,
-          borderColor: style.color,
+          backgroundColor: colors.bgColor,
+          borderColor: colors.color,
           borderWidth: 2,
-          padding: 10,
+          padding: 8,
           borderRadius: 8,
-          minWidth: 180,
+          minWidth: 240,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         },
       };
     });
 
     console.log('✅ Created nodes:', nodes);
 
-    // Create edges from dependencies
     const edges: Edge[] = [];
     resources.forEach((resource) => {
       console.log(`Checking dependencies for ${resource.id}:`, resource.dependencies);
       
       if (resource.dependencies && resource.dependencies.length > 0) {
         resource.dependencies.forEach((depId) => {
-          // Check if the dependency exists in our resources
           if (resources.some(r => r.id === depId)) {
             console.log(`✅ Creating edge: ${depId} -> ${resource.id}`);
             edges.push({
@@ -224,8 +235,8 @@ export default function ResourceDependencyGraph({ resources = [] }: ResourceDepe
         <MiniMap
           className="bg-gray-800 border-gray-700"
           nodeColor={(node: any) => {
-            const style = getResourceStyle(node.data.type);
-            return style.color;
+            const colors = getResourceColor(node.data.type || '');
+            return colors.color;
           }}
         />
       </ReactFlow>

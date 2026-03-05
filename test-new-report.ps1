@@ -33,7 +33,8 @@ $response = Invoke-WebRequest -Uri "$apiUrl/premortem" -Method POST -Body $body 
 $result = $response.Content | ConvertFrom-Json
 
 Write-Host "✅ Report generated successfully!" -ForegroundColor Green
-Write-Host "Report ID: $($result.reportId)" -ForegroundColor Yellow
+Write-Host "Report ID: $($result.id)" -ForegroundColor Yellow
+Write-Host "Timestamp: $($result.timestamp)" -ForegroundColor Gray
 Write-Host ""
 
 # Check if resource dependencies were parsed
@@ -58,4 +59,4 @@ if ($result.parsedReport.resourceDependencies) {
 }
 
 Write-Host ""
-Write-Host "View report at: http://localhost:3000/premortem?id=$($result.reportId)" -ForegroundColor Cyan
+Write-Host "View report at: http://localhost:3000/premortem?id=$($result.id)" -ForegroundColor Cyan
