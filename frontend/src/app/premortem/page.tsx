@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -60,7 +60,7 @@ interface ParsedReport {
   rawReport: string;
 }
 
-export default function PreMortemPage() {
+function PreMortemContent() {
   console.log('🚀 PreMortemPage component loaded - with resource dependencies feature');
   
   const router = useRouter();
@@ -691,5 +691,18 @@ export default function PreMortemPage() {
         )}
       </div>
     </div>
+  );
+}
+
+
+export default function PreMortemPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <PreMortemContent />
+    </Suspense>
   );
 }

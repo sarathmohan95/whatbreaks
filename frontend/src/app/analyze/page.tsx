@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,7 @@ interface Template {
   };
 }
 
-export default function AnalyzePage() {
+function AnalyzeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -119,7 +119,8 @@ export default function AnalyzePage() {
         : 'cloudformation';
 
       // Send to API
-      const response = await fetch('/api/parse-iac', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://7klnvxi9lh.execute-api.us-east-1.amazonaws.com';
+      const response = await fetch(`${API_URL}/parse-iac`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileContent: content, fileType }),
@@ -188,7 +189,8 @@ export default function AnalyzePage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/premortem', {
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://7klnvxi9lh.execute-api.us-east-1.amazonaws.com';
+      const response = await fetch(`${API_URL}/premortem`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -731,5 +733,18 @@ Proposed: Redis cluster with 3 shards, one per AZ"
         </div>
       )}
     </div>
+  );
+}
+
+
+export default function AnalyzePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-gray-900 flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <AnalyzeContent />
+    </Suspense>
   );
 }
