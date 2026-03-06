@@ -119,8 +119,7 @@ function AnalyzeContent() {
         : 'cloudformation';
 
       // Send to API
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://7klnvxi9lh.execute-api.us-east-1.amazonaws.com';
-      const response = await fetch(`${API_URL}/parse-iac`, {
+      const response = await fetch('/api/parse-iac', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileContent: content, fileType }),
@@ -189,8 +188,7 @@ function AnalyzeContent() {
     setLoading(true);
 
     try {
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://7klnvxi9lh.execute-api.us-east-1.amazonaws.com';
-      const response = await fetch(`${API_URL}/premortem`, {
+      const response = await fetch('/api/premortem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

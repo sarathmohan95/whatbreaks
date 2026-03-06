@@ -17,7 +17,7 @@ export default function LandingPage() {
     // Fetch stats from history
     const fetchStats = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports`);
+        const response = await fetch('/api/reports');
         if (response.ok) {
           const data = await response.json();
           const reports = data.reports || [];

@@ -1,0 +1,32 @@
+Migrating our AWS Connect contact center instance from us-east-1 to eu-west-1 for GDPR compliance.
+
+Current Setup:
+- AWS Connect instance in us-east-1 handling 5,000 calls/day
+- 200 active agents working 24/7 across 3 shifts
+- 5 Lambda functions for IVR logic (must respond in <500ms)
+- Lex bot for customer intent detection (trained on 6 months of data)
+- DynamoDB table for customer context lookups (<200ms requirement)
+- S3 bucket with 2TB of call recordings (7-year retention required)
+- Kinesis Data Stream for real-time analytics
+- Integration with Salesforce CRM via API Gateway (10s timeout)
+- 10 toll-free numbers + 5 DID numbers
+- Peak: 150 concurrent calls, 200 concurrent agents
+- SLA: 95% of calls answered within 30 seconds
+
+Proposed Change:
+- Create new Connect instance in eu-west-1
+- Port all phone numbers to new region (2-4 week carrier process)
+- Migrate contact flows and routing profiles
+- Set up DynamoDB global tables for cross-region replication
+- Create new S3 bucket in eu-west-1 for recordings
+- Redeploy all Lambda functions to eu-west-1
+- Retrain Lex bot in eu-west-1 with historical data
+- Update Kinesis stream and CloudWatch dashboards
+- Reconfigure Salesforce integration endpoints
+- Migrate 200 agent accounts and permissions
+- Train agents on new system (2 hours per agent)
+
+Planning to do the cutover during a weekend to minimize impact, with a rollback plan to revert DNS if issues occur. We'll run both instances in parallel for 1 week before final cutover.
+
+Traffic Patterns:
+Peak hours 9 AM - 5 PM CET weekdays. 5,000 calls/day average, 8,000 during product launches. 150 concurrent calls at peak. 8-minute average handle time. 15% callback rate. 30% of calls use Lex bot for self-service.

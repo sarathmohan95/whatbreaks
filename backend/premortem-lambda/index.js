@@ -117,7 +117,12 @@ async function handleListReports(event) {
 
   const params = {
     TableName: DYNAMODB_TABLE,
-    IndexName: 'TimestampIndex',
+    IndexName: 'AllReportsIndex',
+    KeyConditionExpression: 'entityType = :entityType',
+    ExpressionAttributeValues: {
+      ':entityType': 'report',
+    },
+    ScanIndexForward: false, // Sort descending (newest first)
     Limit: limit,
   };
 
@@ -125,17 +130,12 @@ async function handleListReports(event) {
     params.ExclusiveStartKey = lastKey;
   }
 
-  // Use Scan instead of Query since we want all items sorted by timestamp
-  const command = new ScanCommand(params);
+  // Use Query to get all reports sorted by timestamp
+  const command = new QueryCommand(params);
   const result = await dynamoClient.send(command);
 
-  // Sort by timestamp descending (newest first) since Scan doesn't guarantee order
-  const sortedItems = (result.Items || []).sort((a, b) => 
-    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
-
   // Return summary data only (not full reports)
-  const reports = sortedItems.map(item => ({
+  const reports = (result.Items || []).map(item => ({
     id: item.id,
     timestamp: item.timestamp,
     changeSummary: item.changeSummary,
@@ -557,6 +557,7 @@ async function saveReport(report) {
 
   const item = {
     ...report,
+    entityType: 'report', // For querying all reports sorted by timestamp
     userId: 'anonymous', // Future: get from auth
     ttl,
   };

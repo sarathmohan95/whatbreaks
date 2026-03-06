@@ -26,6 +26,11 @@ export default function HistoryPage() {
       setLoading(true);
       setError(null);
       const response = await listReports(20);
+      console.log('Initial load:', { 
+        reportCount: response.reports.length, 
+        hasMore: response.hasMore, 
+        lastKey: response.lastKey 
+      });
       setReports(response.reports);
       setLastKey(response.lastKey);
       setHasMore(response.hasMore);
@@ -41,11 +46,18 @@ export default function HistoryPage() {
 
     try {
       setLoadingMore(true);
+      console.log('Loading more with lastKey:', lastKey);
       const response = await listReports(20, lastKey);
+      console.log('Load more response:', { 
+        reportCount: response.reports.length, 
+        hasMore: response.hasMore, 
+        lastKey: response.lastKey 
+      });
       setReports([...reports, ...response.reports]);
       setLastKey(response.lastKey);
       setHasMore(response.hasMore);
     } catch (err: any) {
+      console.error('Load more error:', err);
       setError(err.message || 'Failed to load more reports');
     } finally {
       setLoadingMore(false);

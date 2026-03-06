@@ -1,6 +1,6 @@
 // API client for custom template operations
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://7klnvxi9lh.execute-api.us-east-1.amazonaws.com';
+const API_BASE_URL = '/api';
 
 export interface TemplateParameter {
   key: string;
@@ -56,12 +56,12 @@ export async function createTemplate(template: Omit<Template, 'id' | 'createdAt'
 }
 
 export async function listTemplates(userId?: string): Promise<Template[]> {
-  const url = new URL(`${API_BASE_URL}/templates`);
+  let url = `${API_BASE_URL}/templates`;
   if (userId) {
-    url.searchParams.append('userId', userId);
+    url += `?userId=${encodeURIComponent(userId)}`;
   }
 
-  const response = await fetch(url.toString());
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error(`Failed to list templates: ${response.statusText}`);

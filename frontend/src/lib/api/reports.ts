@@ -52,7 +52,8 @@ export interface ListReportsResponse {
   hasMore: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://7klnvxi9lh.execute-api.us-east-1.amazonaws.com';
+// Use /api prefix to go through CloudFront (will be stripped by CloudFront Function)
+const API_URL = '/api';
 
 /**
  * List all reports with pagination

@@ -248,6 +248,15 @@ resource "aws_wafv2_web_acl" "frontend" {
   )
 }
 
+# CloudFront Function to strip /api prefix
+resource "aws_cloudfront_function" "api_rewrite" {
+  name    = "${var.project_name}-api-rewrite"
+  runtime = "cloudfront-js-1.0"
+  comment = "Strips /api prefix before forwarding to API Gateway"
+  publish = true
+  code    = file("${path.module}/cloudfront-function.js")
+}
+
 # CloudFront Distribution
 resource "aws_cloudfront_distribution" "frontend" {
   enabled             = true
@@ -261,6 +270,24 @@ resource "aws_cloudfront_distribution" "frontend" {
     domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
     origin_id                = "S3-${aws_s3_bucket.frontend.id}"
     origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
+  }
+
+  # API Gateway origin for backend API
+  origin {
+    domain_name = replace(aws_apigatewayv2_api.api.api_endpoint, "https://", "")
+    origin_id   = "API-Gateway"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+
+    custom_header {
+      name  = "X-CloudFront-Secret"
+      value = random_password.api_secret.result
+    }
   }
 
   default_cache_behavior {
@@ -284,6 +311,35 @@ resource "aws_cloudfront_distribution" "frontend" {
     compress               = true
 
     # Lambda@Edge or CloudFront Functions can be added here for additional logic
+  }
+
+  # Cache behavior for API requests (highest priority)
+  # All API calls use /api/* prefix to avoid conflicts with static pages
+  ordered_cache_behavior {
+    path_pattern     = "/api/*"
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "API-Gateway"
+
+    forwarded_values {
+      query_string = true
+      headers      = ["Accept", "Content-Type", "Authorization"]
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy = "https-only"
+    min_ttl                = 0
+    default_ttl            = 0
+    max_ttl                = 0
+    compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.api_rewrite.arn
+    }
   }
 
   # Cache behavior for static assets (longer TTL)

@@ -19,6 +19,11 @@ resource "aws_dynamodb_table" "analyses" {
     type = "S"
   }
   
+  attribute {
+    name = "entityType"
+    type = "S"
+  }
+  
   global_secondary_index {
     name            = "TimestampIndex"
     hash_key        = "timestamp"
@@ -28,6 +33,13 @@ resource "aws_dynamodb_table" "analyses" {
   global_secondary_index {
     name            = "UserIdIndex"
     hash_key        = "userId"
+    range_key       = "timestamp"
+    projection_type = "ALL"
+  }
+  
+  global_secondary_index {
+    name            = "AllReportsIndex"
+    hash_key        = "entityType"
     range_key       = "timestamp"
     projection_type = "ALL"
   }
@@ -293,64 +305,88 @@ resource "aws_apigatewayv2_integration" "lambda" {
 }
 
 resource "aws_apigatewayv2_route" "premortem" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "POST /premortem"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "POST /premortem"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "parse_iac" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "POST /parse-iac"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "POST /parse-iac"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "list_reports" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "GET /reports"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "GET /reports"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "get_report" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "GET /reports/{id}"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "GET /reports/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 # Template routes
 resource "aws_apigatewayv2_route" "create_template" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "POST /templates"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "POST /templates"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "list_templates" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "GET /templates"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "GET /templates"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "get_template" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "GET /templates/{id}"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "GET /templates/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "update_template" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "PUT /templates/{id}"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "PUT /templates/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_route" "delete_template" {
-  api_id    = aws_apigatewayv2_api.api.id
-  route_key = "DELETE /templates/{id}"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  api_id             = aws_apigatewayv2_api.api.id
+  route_key          = "DELETE /templates/{id}"
+  target             = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+  authorization_type = "CUSTOM"
+  authorizer_id      = aws_apigatewayv2_authorizer.cloudfront.id
 }
 
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.api.id
   name        = "$default"
   auto_deploy = true
+  
+  # Throttling settings to prevent abuse and control costs
+  default_route_settings {
+    throttling_burst_limit = 100   # Maximum concurrent requests
+    throttling_rate_limit  = 50    # Requests per second (steady state)
+  }
   
   tags = merge(
     var.common_tags,
